@@ -3,12 +3,8 @@ import {
   LayoutDashboard,
   CalendarCheck,
   Wallet,
-  FileCheck2,
   History,
-  Cloud,
   PlusCircle,
-  TrendingUp,
-  TrendingDown,
   Download,
   Clock,
   AlertCircle,
@@ -17,14 +13,19 @@ import {
   ArrowDownRight,
   Eye,
   Check,
-  Menu,
-  X,
   CalendarDays,
-  FolderOpen,
   MessageSquareCheck,
-  GraduationCap,
-  Briefcase
+  Briefcase,
+  Scale,
+  Sparkles,
+  CheckSquare,
+  ChevronRight,
 } from 'lucide-react';
+
+import { ROLES, ROLE_PROFILES, hasPermission } from './domain/rbac';
+import { MetricCard, AdminPageHeader, AdminBadge } from './components/common/AdminComponents';
+import AdminHeader from './components/layout/AdminHeader';
+import BemSidebar from './components/layout/BemSidebar';
 
 import { dataService, getSupabaseCredentials } from './lib/supabase';
 import CloudConfigModal from './components/CloudConfigModal';
@@ -36,18 +37,15 @@ import ResourceHub from './components/ResourceHub';
 import AdvokasiTracker from './components/AdvokasiTracker';
 import DivisionWorkspace from './components/DivisionWorkspace';
 
-// Opsi Peran Fungsionaris BEM FEB UKRIDA
-const ROLES = [
-  { id: 'ketua', name: 'Arthur Reezan', title: 'Ketua Umum BEM FEB UKRIDA', color: '#3b82f6' },
-  { id: 'bendahara', name: 'Sarah Amalia', title: 'Bendahara Umum BEM FEB', color: '#10b981' },
-  { id: 'koordinator', name: 'Dimas Prasetyo', title: 'Koordinator Divisi (PJ Proker)', color: '#f59e0b' },
-  { id: 'anggota', name: 'Fungsionaris BEM', title: 'Anggota Divisi / Panitia', color: '#8b5cf6' }
-];
-
 export default function App() {
+  // Role & Persona State (Default: BPH / Ketua Umum Arthur Reezan)
+  const [activeRoleKey, setActiveRoleKey] = useState(() => {
+    return localStorage.getItem('bem_active_role') || ROLES.BPH_KETUA;
+  });
+  const activeRole = ROLE_PROFILES[activeRoleKey] || ROLE_PROFILES[ROLES.BPH_KETUA];
+
+  // Tab State
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [activeRole, setActiveRole] = useState(ROLES[0]);
-  const [showRoleMenu, setShowRoleMenu] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Data states
@@ -89,6 +87,11 @@ export default function App() {
       setShowInstallBanner(true);
     });
   }, []);
+
+  const handleRoleChange = (newRoleKey) => {
+    setActiveRoleKey(newRoleKey);
+    localStorage.setItem('bem_active_role', newRoleKey);
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -142,6 +145,11 @@ export default function App() {
 
   const prokerPending = prokerList.filter((p) => p.status === 'Diajukan');
   const prokerBerjalan = prokerList.filter((p) => p.status === 'Berjalan');
+
+  // Pending Tasks for currently active role
+  const pendingTasksForRole = divisionTasks.filter(
+    (t) => t.assignedTo?.toLowerCase().includes(activeRole.name.toLowerCase()) && t.status !== 'Selesai'
+  );
 
   // Actions
   const handleApproveProker = async (prokerId, approve = true) => {
@@ -278,244 +286,44 @@ export default function App() {
     return t.tipe === txFilter;
   });
 
+  // Rata-rata KPI
+  const avgKpi = divisionMembers.length
+    ? Math.round(divisionMembers.reduce((acc, m) => acc + (m.kpiScore || 0), 0) / divisionMembers.length)
+    : 85;
+
   return (
-    <div className="app-layout">
-      {/* SIDEBAR NAVIGATION (Desktop) */}
-      <aside className={`sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
-        <div className="brand-section">
-          <div className="brand-icon">
-            <GraduationCap size={24} color="#38bdf8" />
-          </div>
-          <div className="brand-info">
-            <h2>BEM FEB</h2>
-            <span className="brand-badge">UKRIDA • LEAD TO IMPACT</span>
-          </div>
-          {mobileMenuOpen && (
-            <button
-              onClick={() => setMobileMenuOpen(false)}
-              style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#fff' }}
-            >
-              <X size={20} />
-            </button>
-          )}
-        </div>
+    <div className="min-h-screen bg-[#081225] text-slate-100 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
+      {/* 1. TOP HEADER ALA ABMAS (Role Switcher Pill, UKRIDA Brand, Cloud Status) */}
+      <AdminHeader
+        activeRole={activeRoleKey}
+        onRoleChange={handleRoleChange}
+        activeTab={activeTab}
+        onOpenMobileSidebar={() => setMobileMenuOpen(true)}
+        onOpenCloudConfig={() => setIsCloudModalOpen(true)}
+        onOpenQuickTask={() => {
+          setActiveTab('divisions');
+        }}
+        cloudConfigured={cloudStatus.isConfigured}
+      />
 
-        <nav className="nav-menu">
-          {/* GRUP 1: PUSAT KERJA & DIVISI (ALA ABMAS) */}
-          <div className="sidebar-group-label">Pusat Kerja & Divisi</div>
-          <button
-            className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-            onClick={() => { setActiveTab('dashboard'); setMobileMenuOpen(false); }}
-          >
-            <LayoutDashboard size={18} />
-            Dashboard Utama
-          </button>
+      <div className="flex-1 flex w-full">
+        {/* 2. GROUPED SIDEBAR NAVIGATION (Ala ChurchAdminSidebar ABMAS) */}
+        <BemSidebar
+          activeRole={activeRoleKey}
+          activeTab={activeTab}
+          onTabChange={(tabId) => {
+            setActiveTab(tabId);
+          }}
+          isMobileOpen={mobileMenuOpen}
+          onCloseMobile={() => setMobileMenuOpen(false)}
+          pendingTaskCount={pendingTasksForRole.length}
+        />
 
-          <button
-            className={`nav-item ${activeTab === 'workspace' ? 'active' : ''}`}
-            onClick={() => { setActiveTab('workspace'); setMobileMenuOpen(false); }}
-          >
-            <Briefcase size={18} />
-            Workspace Divisi & KPI
-            <span className="nav-badge" style={{ background: 'rgba(56, 189, 248, 0.15)', color: 'var(--sky)' }}>
-              {divisions.length} Divisi
-            </span>
-          </button>
-
-          <button
-            className={`nav-item ${activeTab === 'proker' ? 'active' : ''}`}
-            onClick={() => { setActiveTab('proker'); setMobileMenuOpen(false); }}
-          >
-            <CalendarCheck size={18} />
-            Program Kerja BEM
-            {prokerPending.length > 0 && (
-              <span className="nav-badge">{prokerPending.length} Diajukan</span>
-            )}
-          </button>
-
-          <button
-            className={`nav-item ${activeTab === 'kalender' ? 'active' : ''}`}
-            onClick={() => { setActiveTab('kalender'); setMobileMenuOpen(false); }}
-          >
-            <CalendarDays size={18} />
-            Kalender Agenda BEM
-          </button>
-
-          {/* GRUP 2: KEUANGAN & AKUNTABILITAS */}
-          <div className="sidebar-group-label" style={{ marginTop: '12px' }}>Keuangan & LPJ</div>
-          <button
-            className={`nav-item ${activeTab === 'keuangan' ? 'active' : ''}`}
-            onClick={() => { setActiveTab('keuangan'); setMobileMenuOpen(false); }}
-          >
-            <Wallet size={18} />
-            Buku Kas (LK)
-          </button>
-
-          <button
-            className={`nav-item ${activeTab === 'lpj' ? 'active' : ''}`}
-            onClick={() => { setActiveTab('lpj'); setMobileMenuOpen(false); }}
-          >
-            <FileCheck2 size={18} />
-            Laporan & LPJ Dekanat
-          </button>
-
-          {/* GRUP 3: ADMINISTRASI & ADVOKASI */}
-          <div className="sidebar-group-label" style={{ marginTop: '12px' }}>Administrasi & Relasi</div>
-          <button
-            className={`nav-item ${activeTab === 'dokumen' ? 'active' : ''}`}
-            onClick={() => { setActiveTab('dokumen'); setMobileMenuOpen(false); }}
-          >
-            <FolderOpen size={18} />
-            Dokumen Resmi Dekanat
-          </button>
-
-          <button
-            className={`nav-item ${activeTab === 'advokasi' ? 'active' : ''}`}
-            onClick={() => { setActiveTab('advokasi'); setMobileMenuOpen(false); }}
-          >
-            <MessageSquareCheck size={18} />
-            Advokasi Mahasiswa
-          </button>
-
-          <button
-            className={`nav-item ${activeTab === 'logs' ? 'active' : ''}`}
-            onClick={() => { setActiveTab('logs'); setMobileMenuOpen(false); }}
-          >
-            <History size={18} />
-            Log Kolaborasi Tim
-          </button>
-        </nav>
-
-        {/* Cloud Status Footer */}
-        <div className="sidebar-footer">
-          <div className="cloud-status-pill" onClick={() => setIsCloudModalOpen(true)}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div className={`status-dot ${cloudStatus.isConfigured ? '' : 'offline'}`}></div>
-              <div>
-                <div style={{ fontWeight: 600, color: '#fff' }}>
-                  {cloudStatus.isConfigured ? 'Supabase Online' : 'Mode Offline Demo'}
-                </div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                  {cloudStatus.isConfigured ? 'Sinkron ke Cloud' : 'Klik untuk hubungkan'}
-                </div>
-              </div>
-            </div>
-            <Cloud size={16} color="var(--sky)" />
-          </div>
-        </div>
-      </aside>
-
-      {/* MAIN WRAPPER */}
-      <div className="main-wrapper">
-        {/* TOP HEADER */}
-        <header className="top-header">
-          <div className="header-left">
-            <button
-              onClick={() => setMobileMenuOpen(true)}
-              className="btn btn-secondary"
-              style={{ padding: '8px', display: 'flex', alignItems: 'center' }}
-            >
-              <Menu size={20} />
-            </button>
-            <div>
-              <div className="page-title">
-                {activeTab === 'dashboard' && 'Executive Dashboard BEM FEB UKRIDA'}
-                {activeTab === 'workspace' && 'Workspace Divisi & Evaluasi KPI Fungsionaris'}
-                {activeTab === 'proker' && 'Manajemen Program Kerja (Proker BEM FEB)'}
-                {activeTab === 'keuangan' && 'Buku Kas Umum & Pengelolaan Dana Kemahasiswaan'}
-                {activeTab === 'lpj' && 'Rekapitulasi Anggaran & LPJ Dekanat FEB'}
-                {activeTab === 'kalender' && 'Master Schedule & Kalender Kerja BEM FEB'}
-                {activeTab === 'dokumen' && 'Pusat Dokumen Resmi & Template Dekanat FEB'}
-                {activeTab === 'advokasi' && 'Pelacak Isu & Advokasi Mahasiswa FEB UKRIDA'}
-                {activeTab === 'logs' && 'Audit Trail & Log Kolaborasi Fungsionaris'}
-              </div>
-              <div className="page-subtitle">
-                Badan Eksekutif Mahasiswa Fakultas Ekonomi & Bisnis UKRIDA • Executive Workspace
-              </div>
-            </div>
-          </div>
-
-          <div className="header-actions">
-            {/* Quick Action Button based on Role */}
-            {(activeRole.id === 'bendahara' || activeRole.id === 'ketua') && (
-              <button className="btn btn-emerald btn-sm" onClick={() => setIsAddTxOpen(true)}>
-                <PlusCircle size={16} /> Catat Kas
-              </button>
-            )}
-
-            {(activeRole.id === 'koordinator' || activeRole.id === 'ketua') && (
-              <button className="btn btn-primary btn-sm" onClick={() => setIsAddProkerOpen(true)}>
-                <PlusCircle size={16} /> Ajukan Proker
-              </button>
-            )}
-
-            {/* Role Switcher Box */}
-            <div style={{ position: 'relative' }}>
-              <div className="role-badge-box" onClick={() => setShowRoleMenu(!showRoleMenu)}>
-                <div className="role-avatar" style={{ background: activeRole.color }}>
-                  {activeRole.name.charAt(0)}
-                </div>
-                <div>
-                  <div className="role-text-title">{activeRole.name}</div>
-                  <div className="role-text-role">{activeRole.title}</div>
-                </div>
-              </div>
-
-              {showRoleMenu && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: '110%',
-                    right: 0,
-                    width: '240px',
-                    background: 'var(--bg-surface)',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: '12px',
-                    padding: '8px',
-                    zIndex: 60,
-                    boxShadow: 'var(--shadow-card)'
-                  }}
-                >
-                  <div style={{ padding: '6px 10px', fontSize: '0.72rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>
-                    Ganti Peran Pengguna (Simulasi)
-                  </div>
-                  {ROLES.map((r) => (
-                    <div
-                      key={r.id}
-                      onClick={() => {
-                        setActiveRole(r);
-                        setShowRoleMenu(false);
-                      }}
-                      style={{
-                        padding: '8px 10px',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        background: activeRole.id === r.id ? 'rgba(56, 189, 248, 0.1)' : 'transparent'
-                      }}
-                    >
-                      <div className="role-avatar" style={{ width: '26px', height: '26px', background: r.color, fontSize: '0.75rem' }}>
-                        {r.name.charAt(0)}
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#fff' }}>{r.name}</div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{r.title}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </header>
-
-        {/* CONTENT BODY */}
-        <main className="content-body">
+        {/* 3. MAIN CONTENT WRAPPER */}
+        <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-24 lg:pb-12">
           {/* PWA Mobile App Promo Banner */}
           {showInstallBanner && (
-            <div className="install-banner">
+            <div className="install-banner mb-6">
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                 <Smartphone size={32} color="var(--sky)" />
                 <div>
@@ -533,78 +341,174 @@ export default function App() {
             </div>
           )}
 
-          {/* TAB 1: DASHBOARD */}
+          {/* ============================================================== */}
+          {/* TAB 1: EXECUTIVE & ROLE-TAILORED DASHBOARD                     */}
+          {/* ============================================================== */}
           {activeTab === 'dashboard' && (
-            <>
-              {/* Financial & Proker Stat Cards */}
-              <div className="stats-grid">
-                <div className="stat-card">
-                  <div className="stat-card-top">
-                    <span className="stat-title">Sisa Saldo Kas Umum</span>
-                    <div className="stat-icon emerald">
-                      <Wallet size={20} />
-                    </div>
-                  </div>
-                  <div className="stat-value mono" style={{ color: saldoKas >= 0 ? '#10b981' : '#f43f5e' }}>
-                    Rp {saldoKas.toLocaleString('id-ID')}
-                  </div>
-                  <div className="stat-desc">
-                    Terhitung dari {transactions.length} riwayat mutasi kas
-                  </div>
-                </div>
+            <div className="space-y-6">
+              {/* ABMAS Page Header */}
+              <AdminPageHeader
+                eyebrow="PORTAL EKSEKUTIF & OPERASIONAL • LEAD TO IMPACT"
+                title={
+                  activeRoleKey === ROLES.BPH_KETUA
+                    ? "Executive Command Center"
+                    : activeRoleKey === ROLES.KOOR_DIVISI
+                    ? `Divisional Command: ${activeRole.divisionName}`
+                    : activeRoleKey === ROLES.ANGGOTA_STAF
+                    ? `Portal Tugas Personal: ${activeRole.name}`
+                    : "Tata Kelola Perbendaharaan BEM"
+                }
+                description={
+                  activeRoleKey === ROLES.BPH_KETUA
+                    ? "Ringkasan metrik fakultas, validasi program kerja, audit kas, dan pengawasan 6 divisi FEB UKRIDA."
+                    : activeRoleKey === ROLES.KOOR_DIVISI
+                    ? "Monitoring pencapaian KPI fungsionaris divisi, pembagian tugas baru, dan pengawalan deadline proker."
+                    : activeRoleKey === ROLES.ANGGOTA_STAF
+                    ? "Pantau tugas aktif Anda, selesaikan checklist kerja, dan unggah bukti deliverable untuk pencapaian KPI maksimal."
+                    : "Pencatatan kas masuk dan keluar, monitoring pagu anggaran proker, serta verifikasi bukti nota transaksi."
+                }
+                action={
+                  <div className="flex items-center gap-2">
+                    {hasPermission(activeRoleKey, 'approveProposals') && prokerPending.length > 0 && (
+                      <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                        <AlertCircle className="size-3.5 text-amber-600" />
+                        {prokerPending.length} Proker Perlu Approval
+                      </span>
+                    )}
 
-                <div className="stat-card">
-                  <div className="stat-card-top">
-                    <span className="stat-title">Total Pemasukan Kas</span>
-                    <div className="stat-icon primary">
-                      <TrendingUp size={20} />
-                    </div>
-                  </div>
-                  <div className="stat-value mono">
-                    Rp {totalPemasukan.toLocaleString('id-ID')}
-                  </div>
-                  <div className="stat-desc">Dana dekanat, sponsor & kas pengurus</div>
-                </div>
+                    {hasPermission(activeRoleKey, 'manageFinances') && (
+                      <button
+                        className="btn btn-emerald btn-sm"
+                        onClick={() => setIsAddTxOpen(true)}
+                      >
+                        <PlusCircle size={15} /> Catat Kas
+                      </button>
+                    )}
 
-                <div className="stat-card">
-                  <div className="stat-card-top">
-                    <span className="stat-title">Total Realisasi Belanja</span>
-                    <div className="stat-icon rose">
-                      <TrendingDown size={20} />
-                    </div>
+                    {(activeRoleKey === ROLES.KOOR_DIVISI || activeRoleKey === ROLES.BPH_KETUA) && (
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => setIsAddProkerOpen(true)}
+                      >
+                        <PlusCircle size={15} /> Ajukan Proker
+                      </button>
+                    )}
                   </div>
-                  <div className="stat-value mono">
-                    Rp {totalPengeluaran.toLocaleString('id-ID')}
-                  </div>
-                  <div className="stat-desc">
-                    {Math.round((totalPengeluaran / (totalPemasukan || 1)) * 100)}% dari total dana terkumpul
-                  </div>
-                </div>
+                }
+              />
 
-                <div className="stat-card">
-                  <div className="stat-card-top">
-                    <span className="stat-title">Program Kerja LK</span>
-                    <div className="stat-icon amber">
-                      <CalendarCheck size={20} />
-                    </div>
-                  </div>
-                  <div className="stat-value">
-                    {prokerList.length} <span style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>Kegiatan</span>
-                  </div>
-                  <div className="stat-desc">
-                    {prokerBerjalan.length} sedang berjalan • {prokerPending.length} menunggu persetujuan
-                  </div>
-                </div>
+              {/* 4 METRIC CARDS ALA ABMAS (Variant: Green, Blue, Yellow, Red) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <MetricCard
+                  title="Sisa Saldo Kas Umum"
+                  value={`Rp ${saldoKas.toLocaleString('id-ID')}`}
+                  subtitle={`Terhitung dari ${transactions.length} mutasi`}
+                  change={saldoKas >= 0 ? "Surplus Kas" : "Defisit"}
+                  isPositive={saldoKas >= 0}
+                  icon={Wallet}
+                  variant="green"
+                  onClick={() => setActiveTab('finance')}
+                />
+
+                <MetricCard
+                  title="Program Kerja BEM"
+                  value={`${prokerList.length} Proker`}
+                  subtitle={`${prokerBerjalan.length} aktif • ${prokerPending.length} antrean`}
+                  change={`${prokerBerjalan.length} Berjalan`}
+                  isPositive={true}
+                  icon={CalendarCheck}
+                  variant="blue"
+                  onClick={() => setActiveTab('proker')}
+                />
+
+                <MetricCard
+                  title="Rata-rata KPI Fungsionaris"
+                  value={`${avgKpi}%`}
+                  subtitle={`${divisionMembers.filter((m) => (m.kpiScore || 0) >= 75).length} dari ${divisionMembers.length} staf memenuhi KPI`}
+                  change={avgKpi >= 75 ? "Sangat Baik" : "Perlu Evaluasi"}
+                  isPositive={avgKpi >= 75}
+                  icon={Sparkles}
+                  variant="yellow"
+                  onClick={() => setActiveTab('divisions')}
+                />
+
+                <MetricCard
+                  title="Advokasi Mahasiswa FEB"
+                  value={`${advokasiList.length} Isu`}
+                  subtitle={`${advokasiList.filter((a) => a.status !== 'Selesai').length} butuh tindak lanjut Dekanat`}
+                  change={advokasiList.filter((a) => a.status === 'Selesai').length + " Tuntas"}
+                  isPositive={true}
+                  icon={Scale}
+                  variant="red"
+                  onClick={() => setActiveTab('advocacy')}
+                />
               </div>
+
+              {/* KONTEN KHUSUS UNTUK ANGGOTA / STAF (DUTY ROSTER PERSONAL) */}
+              {activeRoleKey === ROLES.ANGGOTA_STAF && (
+                <div className="panel-card mt-6" style={{ borderLeft: '4px solid #10b981' }}>
+                  <div className="panel-header">
+                    <div className="panel-title" style={{ color: '#10b981' }}>
+                      <CheckSquare size={18} /> Tugas Personal Anda ({pendingTasksForRole.length} Tertunda)
+                    </div>
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => setActiveTab('divisions')}
+                    >
+                      Buka Roster Lengkap
+                    </button>
+                  </div>
+                  <div className="panel-body">
+                    {pendingTasksForRole.length === 0 ? (
+                      <div className="text-center py-6 text-slate-400 text-sm">
+                        🎉 Hebat! Semua tugas Anda telah selesai dikerjakan. Pertahankan performa KPI Anda!
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {pendingTasksForRole.map((t) => (
+                          <div
+                            key={t.id}
+                            className="p-4 rounded-xl bg-slate-900/60 border border-slate-700/60 flex flex-col justify-between"
+                          >
+                            <div>
+                              <div className="flex items-center justify-between gap-2 mb-2">
+                                <AdminBadge variant="yellow">{t.kategoriProker || 'Divisi'}</AdminBadge>
+                                <span className="font-mono text-xs text-rose-400 font-bold">
+                                  Batas: {t.deadline}
+                                </span>
+                              </div>
+                              <h4 className="text-sm font-bold text-white">{t.judul}</h4>
+                              <p className="text-xs text-slate-400 mt-1 line-clamp-2">
+                                {t.keterangan || "Lakukan koordinasi dengan koordinator divisi untuk eksekusi tugas ini."}
+                              </p>
+                            </div>
+                            <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between">
+                              <span className="text-xs text-slate-400">
+                                Subtugas: {(t.subtasks || []).filter((s) => s.completed).length} / {(t.subtasks || []).length}
+                              </span>
+                              <button
+                                className="btn btn-primary btn-sm text-xs py-1"
+                                onClick={() => setActiveTab('divisions')}
+                              >
+                                Kerjakan Tugas <ChevronRight size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Pending Approvals Section (Khusus Ketua BPH / Alert) */}
               {prokerPending.length > 0 && (
                 <div className="panel-card" style={{ borderLeft: '4px solid var(--amber)' }}>
                   <div className="panel-header">
-                    <div className="panel-title" style={{ color: varColorAmber }}>
+                    <div className="panel-title" style={{ color: '#f59e0b' }}>
                       <AlertCircle size={20} color="var(--amber)" /> Usulan Program Kerja Butuh Persetujuan ({prokerPending.length})
                     </div>
-                    {activeRole.id === 'ketua' && (
+                    {activeRoleKey === ROLES.BPH_KETUA && (
                       <span style={{ fontSize: '0.78rem', color: 'var(--amber)', fontWeight: 600 }}>
                         Anda login sebagai Ketua BPH (Memiliki Hak Approval)
                       </span>
@@ -641,7 +545,7 @@ export default function App() {
                             </p>
                           </div>
 
-                          {activeRole.id === 'ketua' ? (
+                          {activeRoleKey === ROLES.BPH_KETUA ? (
                             <div style={{ display: 'flex', gap: '10px' }}>
                               <button
                                 className="btn btn-emerald btn-sm"
@@ -730,7 +634,7 @@ export default function App() {
                     <div className="panel-title">
                       <Wallet size={18} color="var(--emerald)" /> Mutasi Kas Terbaru
                     </div>
-                    <button className="btn btn-secondary btn-sm" onClick={() => setActiveTab('keuangan')}>
+                    <button className="btn btn-secondary btn-sm" onClick={() => setActiveTab('finance')}>
                       Buku Kas
                     </button>
                   </div>
@@ -799,7 +703,7 @@ export default function App() {
                     <div className="panel-title">
                       <CalendarDays size={18} color="var(--amber)" /> Agenda & Timeline Kerja BEM Terdekat
                     </div>
-                    <button className="btn btn-secondary btn-sm" onClick={() => setActiveTab('kalender')}>
+                    <button className="btn btn-secondary btn-sm" onClick={() => setActiveTab('calendar')}>
                       Buka Kalender
                     </button>
                   </div>
@@ -845,7 +749,7 @@ export default function App() {
                     <div className="panel-title">
                       <MessageSquareCheck size={18} color="var(--sky)" /> Isu Advokasi Mahasiswa FEB Dikawal
                     </div>
-                    <button className="btn btn-secondary btn-sm" onClick={() => setActiveTab('advokasi')}>
+                    <button className="btn btn-secondary btn-sm" onClick={() => setActiveTab('advocacy')}>
                       Buka Advokasi
                     </button>
                   </div>
@@ -885,11 +789,13 @@ export default function App() {
                   </div>
                 </div>
               </div>
-            </>
+            </div>
           )}
 
-          {/* TAB: WORKSPACE DIVISI & MONITORING KPI (ALA ABMAS) */}
-          {activeTab === 'workspace' && (
+          {/* ============================================================== */}
+          {/* TAB 2: WORKSPACE DIVISI, TUGAS & MONITORING KPI (ALA ABMAS)    */}
+          {/* ============================================================== */}
+          {(activeTab === 'divisions' || activeTab === 'workspace') && (
             <DivisionWorkspace
               divisions={divisions}
               members={divisionMembers}
@@ -903,7 +809,9 @@ export default function App() {
             />
           )}
 
-          {/* TAB 2: PROGRAM KERJA */}
+          {/* ============================================================== */}
+          {/* TAB 3: PROGRAM KERJA (PROKER BEM FEB)                          */}
+          {/* ============================================================== */}
           {activeTab === 'proker' && (
             <div className="panel-card">
               <div className="panel-header">
@@ -948,11 +856,11 @@ export default function App() {
                           display: 'flex',
                           flexDirection: 'column',
                           justifyContent: 'space-between',
-                          boxShadow: 'var(--shadow-card)'
+                          gap: '16px'
                         }}
                       >
                         <div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                             <span
                               className={`badge ${
                                 p.status === 'Berjalan'
@@ -966,51 +874,41 @@ export default function App() {
                             >
                               {p.status}
                             </span>
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-                              Target: {p.target_selesai || 'TBA'}
+                            <span className="mono" style={{ fontSize: '0.85rem', fontWeight: 700, color: '#fff' }}>
+                              Rp {Number(p.pagu_anggaran).toLocaleString('id-ID')}
                             </span>
                           </div>
-
-                          <h3 style={{ fontSize: '1.05rem', marginBottom: '8px' }}>{p.nama_proker}</h3>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--sky)', marginBottom: '8px' }}>
-                            {p.departemen}
+                          <h3 style={{ fontSize: '1.05rem', marginBottom: '6px' }}>{p.nama_proker}</h3>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px' }}>
+                            {p.departemen} • PJ: <strong style={{ color: '#fff' }}>{p.pj}</strong>
                           </div>
-                          <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
+                          <p style={{ fontSize: '0.82rem', color: 'var(--text-dim)', marginBottom: '14px' }}>
                             {p.deskripsi}
                           </p>
-                        </div>
 
-                        <div>
-                          <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '10px', marginBottom: '14px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '6px' }}>
-                              <span style={{ color: 'var(--text-muted)' }}>Pagu Anggaran:</span>
-                              <strong className="mono">Rp {Number(p.pagu_anggaran).toLocaleString('id-ID')}</strong>
+                          <div style={{ marginBottom: '6px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                              <span>Serapan Anggaran</span>
+                              <span>{percent}% (Rp {Number(p.realisasi_anggaran || 0).toLocaleString('id-ID')})</span>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '6px' }}>
-                              <span style={{ color: 'var(--text-muted)' }}>Realisasi Belanja:</span>
-                              <strong className="mono" style={{ color: 'var(--emerald)' }}>
-                                Rp {Number(p.realisasi_anggaran || 0).toLocaleString('id-ID')}
-                              </strong>
-                            </div>
-                            <div className="progress-track">
+                            <div className="progress-track" style={{ marginTop: '6px' }}>
                               <div className="progress-fill" style={{ width: `${percent}%` }}></div>
                             </div>
-                            <div style={{ textAlign: 'right', fontSize: '0.72rem', color: 'var(--sky)', marginTop: '4px' }}>
-                              Serapan Dana: {percent}%
-                            </div>
                           </div>
+                        </div>
 
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-                            <span>PJ: <strong>{p.pj}</strong></span>
-                            {p.status === 'Diajukan' && activeRole.id === 'ketua' && (
-                              <button
-                                className="btn btn-emerald btn-sm"
-                                onClick={() => handleApproveProker(p.id, true)}
-                              >
-                                <Check size={14} /> Setujui
-                              </button>
-                            )}
-                          </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-subtle)', paddingTop: '12px' }}>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>
+                            Target: {p.target_selesai}
+                          </span>
+                          {p.status === 'Diajukan' && activeRoleKey === ROLES.BPH_KETUA && (
+                            <button
+                              className="btn btn-emerald btn-sm"
+                              onClick={() => handleApproveProker(p.id, true)}
+                            >
+                              <Check size={14} /> Setujui
+                            </button>
+                          )}
                         </div>
                       </div>
                     );
@@ -1020,13 +918,15 @@ export default function App() {
             </div>
           )}
 
-          {/* TAB 3: BUKU KAS & KEUANGAN (LK) */}
-          {activeTab === 'keuangan' && (
+          {/* ============================================================== */}
+          {/* TAB 4: BUKU KAS UMUM & KEUANGAN (ALA ABMAS)                    */}
+          {/* ============================================================== */}
+          {(activeTab === 'finance' || activeTab === 'keuangan') && (
             <div className="panel-card">
               <div className="panel-header">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                   <div className="panel-title">
-                    <Wallet size={20} color="var(--emerald)" /> Buku Kas Umum LK FEB
+                    <Wallet size={20} color="var(--emerald)" /> Buku Kas Umum BEM FEB ({filteredTransactions.length})
                   </div>
                   <div style={{ display: 'flex', gap: '6px' }}>
                     {['Semua', 'Pemasukan', 'Pengeluaran'].map((f) => (
@@ -1041,60 +941,80 @@ export default function App() {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
                   <button className="btn btn-secondary btn-sm" onClick={handleExportCSV}>
-                    <Download size={15} /> Export Excel (CSV)
+                    <Download size={15} /> Export CSV
                   </button>
-                  <button className="btn btn-emerald btn-sm" onClick={() => setIsAddTxOpen(true)}>
-                    <PlusCircle size={15} /> Catat Transaksi Kas
-                  </button>
+                  {hasPermission(activeRoleKey, 'manageFinances') && (
+                    <button className="btn btn-emerald btn-sm" onClick={() => setIsAddTxOpen(true)}>
+                      <PlusCircle size={15} /> Catat Transaksi
+                    </button>
+                  )}
                 </div>
               </div>
 
-              <div className="table-responsive">
-                <table className="custom-table">
+              <div className="panel-body" style={{ overflowX: 'auto' }}>
+                <table className="data-table">
                   <thead>
                     <tr>
                       <th>Tanggal</th>
+                      <th>Kategori & Keterangan</th>
+                      <th>Program Kerja Terkait</th>
                       <th>Tipe</th>
-                      <th>Kategori</th>
-                      <th>Keterangan Transaksi</th>
-                      <th>Terkait Proker</th>
-                      <th style={{ textAlign: 'right' }}>Nominal</th>
-                      <th>Dicatat Oleh</th>
-                      <th style={{ textAlign: 'center' }}>Bukti Struk</th>
+                      <th>Jumlah</th>
+                      <th>Bukti Nota</th>
+                      <th>Status Verifikasi</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredTransactions.map((t) => (
                       <tr key={t.id}>
-                        <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t.tanggal}</td>
+                        <td className="mono" style={{ fontSize: '0.82rem', whiteSpace: 'nowrap' }}>
+                          {t.tanggal}
+                        </td>
+                        <td>
+                          <div style={{ fontWeight: 600, color: '#fff', fontSize: '0.88rem' }}>
+                            {t.keterangan}
+                          </div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            Kategori: {t.kategori} • Dicatat: {t.dicatat_oleh}
+                          </div>
+                        </td>
+                        <td style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                          {t.nama_proker || '-'}
+                        </td>
                         <td>
                           <span className={`badge ${t.tipe === 'Pemasukan' ? 'badge-emerald' : 'badge-rose'}`}>
                             {t.tipe}
                           </span>
                         </td>
+                        <td
+                          className="mono"
+                          style={{
+                            fontWeight: 700,
+                            color: t.tipe === 'Pemasukan' ? 'var(--emerald)' : '#fff',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {t.tipe === 'Pemasukan' ? '+' : '-'} Rp {Number(t.jumlah).toLocaleString('id-ID')}
+                        </td>
                         <td>
-                          <strong>{t.kategori}</strong>
+                          {t.bukti_nota_url ? (
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              style={{ padding: '4px 8px', fontSize: '0.72rem' }}
+                              onClick={() => setSelectedTx(t)}
+                            >
+                              <Eye size={13} /> Bukti Nota
+                            </button>
+                          ) : (
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>-</span>
+                          )}
                         </td>
-                        <td>{t.keterangan}</td>
-                        <td style={{ fontSize: '0.8rem', color: 'var(--sky)' }}>
-                          {t.nama_proker || 'Kas Umum'}
-                        </td>
-                        <td style={{ textAlign: 'right', fontWeight: 700 }} className="mono">
-                          <span style={{ color: t.tipe === 'Pemasukan' ? 'var(--emerald)' : '#fff' }}>
-                            {t.tipe === 'Pemasukan' ? '+' : '-'} Rp {Number(t.jumlah).toLocaleString('id-ID')}
+                        <td>
+                          <span className="badge badge-emerald">
+                            <Check size={12} /> {t.status_verifikasi || 'Terverifikasi'}
                           </span>
-                        </td>
-                        <td style={{ fontSize: '0.78rem', color: 'var(--text-dim)' }}>{t.dicatat_oleh}</td>
-                        <td style={{ textAlign: 'center' }}>
-                          <button
-                            className="btn btn-secondary btn-sm"
-                            style={{ padding: '4px 8px', fontSize: '0.75rem' }}
-                            onClick={() => setSelectedTx(t)}
-                          >
-                            <Eye size={13} /> Bukti
-                          </button>
                         </td>
                       </tr>
                     ))}
@@ -1104,147 +1024,61 @@ export default function App() {
             </div>
           )}
 
-          {/* TAB 4: LAPORAN & LPJ */}
-          {activeTab === 'lpj' && (
-            <div className="panel-card">
-              <div className="panel-header">
-                <div>
-                  <div className="panel-title">
-                    <FileCheck2 size={20} color="var(--sky)" /> Rekapitulasi LPJ & Serapan Anggaran Proker
-                  </div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                    Standar Pertanggungjawaban Lembaga Kemahasiswaan Fakultas Ekonomika & Bisnis
-                  </div>
-                </div>
-                <button className="btn btn-secondary btn-sm" onClick={() => window.print()}>
-                  <Download size={15} /> Cetak / Unduh PDF
-                </button>
-              </div>
-
-              <div className="panel-body">
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-                  <div style={{ background: 'rgba(0,0,0,0.25)', padding: '16px', borderRadius: '10px' }}>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Total Pagu Disetujui</div>
-                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fff' }} className="mono">
-                      Rp {totalPaguAnggaran.toLocaleString('id-ID')}
-                    </div>
-                  </div>
-                  <div style={{ background: 'rgba(0,0,0,0.25)', padding: '16px', borderRadius: '10px' }}>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Total Realisasi Pengeluaran</div>
-                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--emerald)' }} className="mono">
-                      Rp {totalPengeluaran.toLocaleString('id-ID')}
-                    </div>
-                  </div>
-                  <div style={{ background: 'rgba(0,0,0,0.25)', padding: '16px', borderRadius: '10px' }}>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Sisa Anggaran Belum Terpakai</div>
-                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--sky)' }} className="mono">
-                      Rp {Math.max(0, totalPaguAnggaran - totalPengeluaran).toLocaleString('id-ID')}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="table-responsive">
-                  <table className="custom-table">
-                    <thead>
-                      <tr>
-                        <th>Nama Kegiatan / Proker</th>
-                        <th>Departemen</th>
-                        <th>Status</th>
-                        <th style={{ textAlign: 'right' }}>Pagu Rencana</th>
-                        <th style={{ textAlign: 'right' }}>Realisasi Aktual</th>
-                        <th style={{ textAlign: 'right' }}>Sisa Saldo</th>
-                        <th style={{ textAlign: 'center' }}>% Serapan</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {prokerList.map((p) => {
-                        const sisa = Number(p.pagu_anggaran) - Number(p.realisasi_anggaran || 0);
-                        const percent = Math.min(
-                          Math.round(((p.realisasi_anggaran || 0) / (p.pagu_anggaran || 1)) * 100),
-                          100
-                        );
-                        return (
-                          <tr key={p.id}>
-                            <td><strong>{p.nama_proker}</strong></td>
-                            <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{p.departemen}</td>
-                            <td>
-                              <span className="badge badge-sky">{p.status}</span>
-                            </td>
-                            <td style={{ textAlign: 'right' }} className="mono">
-                              Rp {Number(p.pagu_anggaran).toLocaleString('id-ID')}
-                            </td>
-                            <td style={{ textAlign: 'right', color: 'var(--emerald)' }} className="mono">
-                              Rp {Number(p.realisasi_anggaran || 0).toLocaleString('id-ID')}
-                            </td>
-                            <td style={{ textAlign: 'right' }} className="mono">
-                              Rp {sisa.toLocaleString('id-ID')}
-                            </td>
-                            <td style={{ textAlign: 'center' }}>
-                              <span className="mono" style={{ fontWeight: 700, color: percent > 80 ? 'var(--emerald)' : 'var(--amber)' }}>
-                                {percent}%
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 5: KALENDER KERJA & MASTER SCHEDULE */}
-          {activeTab === 'kalender' && (
+          {/* ============================================================== */}
+          {/* TAB 5: KALENDER TIMELINE (ALA ABMAS CALENDAR ROSTER)           */}
+          {/* ============================================================== */}
+          {(activeTab === 'calendar' || activeTab === 'kalender') && (
             <CalendarTimeline
               events={events}
+              prokerList={prokerList}
               onAddEvent={handleAddEvent}
-              activeRole={activeRole}
+              activeUser={{ name: activeRole.name, role: activeRole.title }}
             />
           )}
 
-          {/* TAB 6: PUSAT DOKUMEN RESMI & TEMPLATE */}
-          {activeTab === 'dokumen' && (
+          {/* ============================================================== */}
+          {/* TAB 6: PUSAT DOKUMEN & TEMPLATE (RESOURCE HUB)                 */}
+          {/* ============================================================== */}
+          {(activeTab === 'resources' || activeTab === 'dokumen') && (
             <ResourceHub documents={documents} />
           )}
 
-          {/* TAB 7: ADVOKASI & ISU KAMPUS BEM FEB */}
-          {activeTab === 'advokasi' && (
+          {/* ============================================================== */}
+          {/* TAB 7: ADVOKASI & ASPIRASI KAMPUS                              */}
+          {/* ============================================================== */}
+          {(activeTab === 'advocacy' || activeTab === 'advokasi') && (
             <AdvokasiTracker
               advokasiList={advokasiList}
-              onUpdateStatus={handleUpdateAdvokasiStatus}
               onAddAdvokasi={handleAddAdvokasi}
-              activeRole={activeRole}
+              onUpdateStatus={handleUpdateAdvokasiStatus}
+              activeUser={{ name: activeRole.name, role: activeRole.title }}
             />
           )}
 
-          {/* TAB 8: AUDIT LOG AKTIVITAS */}
+          {/* ============================================================== */}
+          {/* TAB 8: AUDIT TRAIL & LOG KOLABORASI                            */}
+          {/* ============================================================== */}
           {activeTab === 'logs' && (
             <div className="panel-card">
               <div className="panel-header">
                 <div className="panel-title">
-                  <History size={20} color="var(--sky)" /> Log Aktivitas Kolaborasi BEM FEB
-                </div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                  Jejak audit dan sinkronisasi perubahan data fungsionaris
+                  <History size={20} color="var(--sky)" /> Log Aktivitas & Audit Trail Organisasi ({logs.length})
                 </div>
               </div>
-
               <div className="panel-body">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {logs.map((log) => (
                     <div
                       key={log.id}
                       style={{
-                        padding: '14px 18px',
+                        padding: '12px 16px',
                         background: 'rgba(0,0,0,0.2)',
+                        borderRadius: '10px',
                         borderLeft: '3px solid var(--sky)',
-                        borderRadius: '8px',
                         display: 'flex',
-                        alignItems: 'center',
                         justifyContent: 'space-between',
-                        flexWrap: 'wrap',
-                        gap: '10px'
+                        alignItems: 'center',
+                        gap: '12px'
                       }}
                     >
                       <div>
@@ -1261,7 +1095,7 @@ export default function App() {
                         </div>
                         <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{log.details}</p>
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
                         <Clock size={13} /> {log.timestamp}
                       </div>
                     </div>
@@ -1273,7 +1107,7 @@ export default function App() {
         </main>
       </div>
 
-      {/* MOBILE BOTTOM NAVIGATION BAR */}
+      {/* MOBILE BOTTOM NAVIGATION BAR (PWA) */}
       <nav className="mobile-bottom-nav">
         <button
           className={`mobile-nav-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
@@ -1283,8 +1117,8 @@ export default function App() {
           <span>Dashboard</span>
         </button>
         <button
-          className={`mobile-nav-btn ${activeTab === 'workspace' ? 'active' : ''}`}
-          onClick={() => setActiveTab('workspace')}
+          className={`mobile-nav-btn ${activeTab === 'divisions' || activeTab === 'workspace' ? 'active' : ''}`}
+          onClick={() => setActiveTab('divisions')}
         >
           <Briefcase size={18} />
           <span>Workspace</span>
@@ -1297,36 +1131,22 @@ export default function App() {
           <span>Proker</span>
         </button>
         <button
-          className={`mobile-nav-btn ${activeTab === 'keuangan' ? 'active' : ''}`}
-          onClick={() => setActiveTab('keuangan')}
+          className={`mobile-nav-btn ${activeTab === 'finance' || activeTab === 'keuangan' ? 'active' : ''}`}
+          onClick={() => setActiveTab('finance')}
         >
           <Wallet size={18} />
           <span>Kas</span>
         </button>
         <button
-          className={`mobile-nav-btn ${activeTab === 'lpj' ? 'active' : ''}`}
-          onClick={() => setActiveTab('lpj')}
-        >
-          <FileCheck2 size={18} />
-          <span>LPJ</span>
-        </button>
-        <button
-          className={`mobile-nav-btn ${activeTab === 'kalender' ? 'active' : ''}`}
-          onClick={() => setActiveTab('kalender')}
+          className={`mobile-nav-btn ${activeTab === 'calendar' || activeTab === 'kalender' ? 'active' : ''}`}
+          onClick={() => setActiveTab('calendar')}
         >
           <CalendarDays size={18} />
           <span>Kalender</span>
         </button>
         <button
-          className={`mobile-nav-btn ${activeTab === 'dokumen' ? 'active' : ''}`}
-          onClick={() => setActiveTab('dokumen')}
-        >
-          <FolderOpen size={18} />
-          <span>Dokumen</span>
-        </button>
-        <button
-          className={`mobile-nav-btn ${activeTab === 'advokasi' ? 'active' : ''}`}
-          onClick={() => setActiveTab('advokasi')}
+          className={`mobile-nav-btn ${activeTab === 'advocacy' || activeTab === 'advokasi' ? 'active' : ''}`}
+          onClick={() => setActiveTab('advocacy')}
         >
           <MessageSquareCheck size={18} />
           <span>Advokasi</span>
@@ -1370,6 +1190,3 @@ export default function App() {
     </div>
   );
 }
-
-// Variable helper
-const varColorAmber = '#f59e0b';
