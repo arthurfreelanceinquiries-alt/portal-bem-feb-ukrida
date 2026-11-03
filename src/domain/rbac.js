@@ -155,8 +155,14 @@ export function getSidebarNavigation(currentRole) {
 
   // Group 2: DATA FUNGSIONARIS & TUGAS (Internal)
   groups.push({
-    title: isStaf ? "PORTAL TUGAS PRIBADI" : "FUNGSIONARIS & TUGAS",
+    title: isStaf ? "PORTAL TUGAS PRIBADI" : "DATA FUNGSIONARIS & TUGAS",
     items: [
+      {
+        id: "members",
+        label: "Database Fungsionaris",
+        icon: "Users",
+        badge: "CRM"
+      },
       {
         id: "divisions",
         label: isStaf ? "Tugas Saya (Duty Roster)" : "Matriks Tugas 6 Divisi",

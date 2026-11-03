@@ -37,6 +37,7 @@ import ResourceHub from './components/ResourceHub';
 import AdvokasiTracker from './components/AdvokasiTracker';
 import DivisionWorkspace from './components/DivisionWorkspace';
 import OrganizationView from './components/OrganizationView';
+import MembersDirectoryView from './components/MembersDirectoryView';
 import AbsensiRapatView from './components/AbsensiRapatView';
 import ProkerManagementView from './components/ProkerManagementView';
 import FinanceView from './components/FinanceView';
@@ -370,21 +371,27 @@ export default function App() {
 
         {/* 3. MAIN CONTENT WRAPPER */}
         <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-24 lg:pb-12">
-          {/* PWA Mobile App Promo Banner */}
+          {/* PWA Mobile App Promo Banner (Clean Light ABMAS style) */}
           {showInstallBanner && (
-            <div className="install-banner mb-6">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                <Smartphone size={32} color="var(--sky)" />
+            <div className="mb-6 p-4 sm:p-5 rounded-2xl border border-blue-200 bg-blue-50/60 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="size-10 rounded-xl bg-[#13539D] text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <Smartphone className="size-5 text-[#F7C828]" />
+                </div>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>
-                    Bisa Dipasang di HP Android & Laptop Windows!
+                  <div className="font-bold text-sm text-slate-900">
+                    Pasang Portal di HP Android & Laptop Windows (PWA)
                   </div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                    Pasang sebagai aplikasi mandiri (PWA / APK) untuk akses cepat tanpa membuka browser berulang kali.
+                  <div className="text-xs text-slate-600 mt-0.5">
+                    Akses instan seperti aplikasi mandiri dengan performa cepat tanpa membuka browser manual.
                   </div>
                 </div>
               </div>
-              <button className="btn btn-primary btn-sm" onClick={handleInstallPWA}>
+              <button
+                type="button"
+                className="px-4 py-2 rounded-xl bg-[#13539D] hover:bg-[#0d417d] text-white text-xs font-bold transition shadow-xs cursor-pointer whitespace-nowrap"
+                onClick={handleInstallPWA}
+              >
                 Pasang Sekarang
               </button>
             </div>
@@ -427,7 +434,8 @@ export default function App() {
 
                     {hasPermission(activeRoleKey, 'manageFinances') && (
                       <button
-                        className="btn btn-emerald btn-sm"
+                        type="button"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition cursor-pointer"
                         onClick={() => setIsAddTxOpen(true)}
                       >
                         <PlusCircle size={15} /> Catat Kas
@@ -436,7 +444,8 @@ export default function App() {
 
                     {(activeRoleKey === ROLES.KOOR_DIVISI || activeRoleKey === ROLES.BPH_KETUA) && (
                       <button
-                        className="btn btn-primary btn-sm"
+                        type="button"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#13539D] hover:bg-[#0d417d] text-white text-xs font-bold shadow-xs transition cursor-pointer"
                         onClick={() => setIsAddProkerOpen(true)}
                       >
                         <PlusCircle size={15} /> Ajukan Proker
@@ -830,6 +839,13 @@ export default function App() {
           )}
 
           {/* ============================================================== */}
+          {/* TAB: DATABASE FUNGSIONARIS & CRM (ALA ABMAS MEMBERS PAGE)      */}
+          {/* ============================================================== */}
+          {activeTab === 'members' && (
+            <MembersDirectoryView activeRole={activeRole} />
+          )}
+
+          {/* ============================================================== */}
           {/* TAB 2: WORKSPACE DIVISI, TUGAS & MONITORING KPI (ALA ABMAS)    */}
           {/* ============================================================== */}
           {(activeTab === 'divisions' || activeTab === 'workspace') && (
@@ -918,56 +934,55 @@ export default function App() {
         </main>
       </div>
 
-      {/* MOBILE BOTTOM NAVIGATION BAR (PWA) */}
-      <nav className="mobile-bottom-nav">
+      {/* MOBILE BOTTOM NAVIGATION BAR (PWA Light ABMAS style) */}
+      <nav className="fixed bottom-0 left-0 right-0 h-16 bg-white/95 border-t border-slate-200 z-50 flex lg:hidden items-center justify-around px-2 backdrop-blur shadow-lg">
         <button
-          className={`mobile-nav-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
+          type="button"
+          className={`flex flex-col items-center justify-center gap-1 text-[10px] font-bold py-1 px-2 rounded-xl transition cursor-pointer ${activeTab === 'dashboard' ? 'text-[#13539D]' : 'text-slate-400 hover:text-slate-700'}`}
           onClick={() => setActiveTab('dashboard')}
         >
           <LayoutDashboard size={18} />
           <span>Dashboard</span>
         </button>
         <button
-          className={`mobile-nav-btn ${activeTab === 'divisions' || activeTab === 'workspace' ? 'active' : ''}`}
+          type="button"
+          className={`flex flex-col items-center justify-center gap-1 text-[10px] font-bold py-1 px-2 rounded-xl transition cursor-pointer ${activeTab === 'members' ? 'text-[#13539D]' : 'text-slate-400 hover:text-slate-700'}`}
+          onClick={() => setActiveTab('members')}
+        >
+          <Users size={18} />
+          <span>Anggota</span>
+        </button>
+        <button
+          type="button"
+          className={`flex flex-col items-center justify-center gap-1 text-[10px] font-bold py-1 px-2 rounded-xl transition cursor-pointer ${activeTab === 'divisions' || activeTab === 'workspace' ? 'text-[#13539D]' : 'text-slate-400 hover:text-slate-700'}`}
           onClick={() => setActiveTab('divisions')}
         >
           <Briefcase size={18} />
-          <span>Workspace</span>
+          <span>Tugas</span>
         </button>
         <button
-          className={`mobile-nav-btn ${activeTab === 'proker' ? 'active' : ''}`}
+          type="button"
+          className={`flex flex-col items-center justify-center gap-1 text-[10px] font-bold py-1 px-2 rounded-xl transition cursor-pointer ${activeTab === 'proker' ? 'text-[#13539D]' : 'text-slate-400 hover:text-slate-700'}`}
           onClick={() => setActiveTab('proker')}
         >
           <CalendarCheck size={18} />
           <span>Proker</span>
         </button>
         <button
-          className={`mobile-nav-btn ${activeTab === 'finance' || activeTab === 'keuangan' ? 'active' : ''}`}
+          type="button"
+          className={`flex flex-col items-center justify-center gap-1 text-[10px] font-bold py-1 px-2 rounded-xl transition cursor-pointer ${activeTab === 'finance' || activeTab === 'keuangan' ? 'text-[#13539D]' : 'text-slate-400 hover:text-slate-700'}`}
           onClick={() => setActiveTab('finance')}
         >
           <Wallet size={18} />
           <span>Kas</span>
         </button>
         <button
-          className={`mobile-nav-btn ${activeTab === 'calendar' || activeTab === 'kalender' ? 'active' : ''}`}
+          type="button"
+          className={`flex flex-col items-center justify-center gap-1 text-[10px] font-bold py-1 px-2 rounded-xl transition cursor-pointer ${activeTab === 'calendar' || activeTab === 'kalender' ? 'text-[#13539D]' : 'text-slate-400 hover:text-slate-700'}`}
           onClick={() => setActiveTab('calendar')}
         >
           <CalendarDays size={18} />
           <span>Kalender</span>
-        </button>
-        <button
-          className={`mobile-nav-btn ${activeTab === 'advocacy' || activeTab === 'advokasi' ? 'active' : ''}`}
-          onClick={() => setActiveTab('advocacy')}
-        >
-          <MessageSquareCheck size={18} />
-          <span>Advokasi</span>
-        </button>
-        <button
-          className={`mobile-nav-btn ${activeTab === 'logs' ? 'active' : ''}`}
-          onClick={() => setActiveTab('logs')}
-        >
-          <History size={18} />
-          <span>Audit</span>
         </button>
       </nav>
 

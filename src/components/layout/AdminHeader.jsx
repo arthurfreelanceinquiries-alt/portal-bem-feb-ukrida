@@ -82,6 +82,8 @@ export default function AdminHeader({
         return activeRole === ROLES.BPH_KETUA ? "Executive Overview" : "Ringkasan Eksekutif";
       case "organization":
         return "Struktur Organisasi BEM FEB";
+      case "members":
+        return "Database Fungsionaris & Anggota";
       case "divisions":
         return activeRole === ROLES.ANGGOTA_STAF
           ? "Tugas Saya (Duty Roster)"
