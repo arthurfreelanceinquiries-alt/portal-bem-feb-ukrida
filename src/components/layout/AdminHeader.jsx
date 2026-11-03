@@ -80,20 +80,29 @@ export default function AdminHeader({
     switch (activeTab) {
       case "dashboard":
         return activeRole === ROLES.BPH_KETUA ? "Executive Overview" : "Ringkasan Eksekutif";
+      case "organization":
+        return "Struktur Organisasi BEM FEB";
       case "divisions":
         return activeRole === ROLES.ANGGOTA_STAF
           ? "Tugas Saya (Duty Roster)"
           : activeRole === ROLES.KOOR_DIVISI
           ? "Command Center Divisi"
           : "Workspace & Matriks Divisi";
+      case "absensi":
+        return "Absensi & Presensi Rapat";
+      case "proker":
+        return "Program Kerja & Pagu Anggaran";
       case "calendar":
         return "Timeline Proker & Kalender";
       case "finance":
         return "Perbendaharaan & Kas BEM";
+      case "advokasi":
       case "advocacy":
         return "Kanal Advokasi Mahasiswa FEB";
       case "resources":
         return "Pusat Dokumen & SK Dekanat";
+      case "audit":
+        return "Audit Log & Rekam Jejak";
       default:
         return "Portal";
     }

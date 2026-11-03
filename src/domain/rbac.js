@@ -125,7 +125,7 @@ export function hasPermission(role, action) {
 }
 
 /**
- * Mengelompokkan item navigasi sidebar ala ChurchAdminSidebar ABMAS
+ * Mengelompokkan item navigasi sidebar ala ChurchAdminSidebar ABMAS (4 Grup Baku)
  */
 export function getSidebarNavigation(currentRole) {
   const isKetua = currentRole === ROLES.BPH_KETUA;
@@ -135,54 +135,86 @@ export function getSidebarNavigation(currentRole) {
 
   const groups = [];
 
-  // Group 1: OVERVIEW & UTAMA
-  const mainItems = [];
-  if (isKetua) {
-    mainItems.push({ id: "dashboard", label: "Executive Overview", icon: "LayoutDashboard", badge: "Live" });
-    mainItems.push({ id: "divisions", label: "Matriks 6 Divisi", icon: "FolderKanban" });
-    mainItems.push({ id: "calendar", label: "Master Kalender Proker", icon: "Calendar" });
-  } else if (isKoor) {
-    mainItems.push({ id: "divisions", label: "Divisi Saya (Command)", icon: "Layers", badge: "Koor" });
-    mainItems.push({ id: "calendar", label: "Timeline Kerja Divisi", icon: "Calendar" });
-    mainItems.push({ id: "dashboard", label: "Ringkasan Fakultas", icon: "LayoutDashboard" });
-  } else if (isStaf) {
-    mainItems.push({ id: "divisions", label: "Tugas Saya (Duty Roster)", icon: "CheckSquare", badge: "My Tasks" });
-    mainItems.push({ id: "calendar", label: "Kalender Deadline Saya", icon: "Calendar" });
-    mainItems.push({ id: "resources", label: "Arsip & Template Dokumen", icon: "FileText" });
-  } else if (isBendahara) {
-    mainItems.push({ id: "finance", label: "Buku Kas & Transaksi", icon: "Wallet", badge: "Kas" });
-    mainItems.push({ id: "dashboard", label: "Dashboard Rekap Anggaran", icon: "LayoutDashboard" });
-    mainItems.push({ id: "divisions", label: "Pagu Anggaran Divisi", icon: "FolderKanban" });
-  }
-
+  // Group 1: DASHBOARD UTAMA
   groups.push({
-    title: isStaf ? "PORTAL TUGAS PRIBADI" : "PENGURUSAN UTAMA",
-    items: mainItems,
+    title: "DASHBOARD UTAMA",
+    items: [
+      {
+        id: "dashboard",
+        label: isKetua ? "Executive Overview" : isKoor ? "Ringkasan Divisi" : isStaf ? "Dashboard Fungsionaris" : "Rekap Anggaran",
+        icon: "LayoutDashboard",
+        badge: "Live"
+      },
+      {
+        id: "organization",
+        label: "Struktur Organisasi",
+        icon: "Building"
+      }
+    ]
   });
 
-  // Group 2: OPERASIONAL & TATA KELOLA
-  const operationalItems = [];
-  if (isKetua) {
-    operationalItems.push({ id: "finance", label: "Perbendaharaan & Kas BEM", icon: "Wallet" });
-    operationalItems.push({ id: "advocacy", label: "Advokasi & Aspirasi Kampus", icon: "Scale" });
-    operationalItems.push({ id: "resources", label: "Pusat Dokumen & SK Dekan", icon: "FileText" });
-  } else if (isKoor) {
-    operationalItems.push({ id: "advocacy", label: "Aspirasi Mahasiswa FEB", icon: "Scale" });
-    operationalItems.push({ id: "resources", label: "SOP & Panduan Proker", icon: "FileText" });
-  } else if (isStaf) {
-    operationalItems.push({ id: "advocacy", label: "Form Aspirasi Mahasiswa", icon: "Scale" });
-    operationalItems.push({ id: "dashboard", label: "Pantau Capaian BEM", icon: "BarChart2" });
-  } else if (isBendahara) {
-    operationalItems.push({ id: "resources", label: "Standar Biaya & Nota Resmi", icon: "FileText" });
-    operationalItems.push({ id: "calendar", label: "Timeline Pencairan Dana", icon: "Calendar" });
-  }
+  // Group 2: DATA FUNGSIONARIS & TUGAS (Internal)
+  groups.push({
+    title: isStaf ? "PORTAL TUGAS PRIBADI" : "FUNGSIONARIS & TUGAS",
+    items: [
+      {
+        id: "divisions",
+        label: isStaf ? "Tugas Saya (Duty Roster)" : "Matriks Tugas 6 Divisi",
+        icon: "CheckSquare",
+        badge: isStaf ? "My Tasks" : "Kanban"
+      },
+      {
+        id: "absensi",
+        label: "Presensi Rapat BEM",
+        icon: "CheckCircle2"
+      }
+    ]
+  });
 
-  if (operationalItems.length > 0) {
-    groups.push({
-      title: isBendahara ? "PELAPORAN & KEUANGAN" : "TATA KELOLA & ARSIP",
-      items: operationalItems,
-    });
-  }
+  // Group 3: PROGRAM KERJA & BIROKRASI
+  groups.push({
+    title: "PROGRAM KERJA & BIROKRASI",
+    items: [
+      {
+        id: "proker",
+        label: "Master Program Kerja",
+        icon: "FolderKanban"
+      },
+      {
+        id: "calendar",
+        label: "Master Kalender Proker",
+        icon: "Calendar"
+      },
+      {
+        id: "resources",
+        label: "Pusat Dokumen & SOP",
+        icon: "FileText"
+      }
+    ]
+  });
+
+  // Group 4: ADMINISTRASI & KEUANGAN
+  groups.push({
+    title: "ADMINISTRASI & KEUANGAN",
+    items: [
+      {
+        id: "finance",
+        label: "Buku Kas & Transaksi",
+        icon: "Wallet",
+        badge: isBendahara ? "Utama" : undefined
+      },
+      {
+        id: "advocacy",
+        label: "Advokasi & Aspirasi",
+        icon: "Scale"
+      },
+      {
+        id: "logs",
+        label: "Log Audit Sistem",
+        icon: "BarChart2"
+      }
+    ]
+  });
 
   return groups;
 }

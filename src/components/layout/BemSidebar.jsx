@@ -7,10 +7,12 @@ import {
   Scale,
   FileText,
   CheckSquare,
+  CheckCircle2,
   Layers,
   BarChart2,
   Users,
   ShieldCheck,
+  Building,
   X,
   Sparkles,
   ArrowRight,
@@ -27,10 +29,12 @@ const ICON_MAP = {
   Scale,
   FileText,
   CheckSquare,
+  CheckCircle2,
   Layers,
   BarChart2,
   Users,
   ShieldCheck,
+  Building,
 };
 
 export default function BemSidebar({
