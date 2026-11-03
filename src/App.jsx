@@ -20,6 +20,7 @@ import {
   Sparkles,
   CheckSquare,
   ChevronRight,
+  Users,
 } from 'lucide-react';
 
 import { ROLES, ROLE_PROFILES, hasPermission } from './domain/rbac';
