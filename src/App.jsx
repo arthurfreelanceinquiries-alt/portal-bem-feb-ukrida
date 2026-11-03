@@ -36,6 +36,8 @@ import CalendarTimeline from './components/CalendarTimeline';
 import ResourceHub from './components/ResourceHub';
 import AdvokasiTracker from './components/AdvokasiTracker';
 import DivisionWorkspace from './components/DivisionWorkspace';
+import AntigravityBridgeModal from './components/AntigravityBridgeModal';
+import { fetchBridgeStatus, fetchBridgeMeetings } from './lib/bridgeClient';
 
 export default function App() {
   // Role & Persona State (Default: BPH / Ketua Umum Arthur Reezan)
@@ -69,6 +71,11 @@ export default function App() {
   const [isAddProkerOpen, setIsAddProkerOpen] = useState(false);
   const [isAddTxOpen, setIsAddTxOpen] = useState(false);
   const [selectedTx, setSelectedTx] = useState(null);
+  const [isBridgeModalOpen, setIsBridgeModalOpen] = useState(false);
+
+  // Bridge & Antigravity status
+  const [bridgeConnected, setBridgeConnected] = useState(false);
+  const [activeAntigravityProfile, setActiveAntigravityProfile] = useState(null);
 
   // Cloud status
   const [cloudStatus, setCloudStatus] = useState(getSupabaseCredentials());
@@ -109,7 +116,41 @@ export default function App() {
       setProkerList(prokerData);
       setTransactions(txData);
       setLogs(logData);
-      setEvents(eventData);
+
+      // Sinkronkan dengan LK-FEB Bridge jika aktif
+      let finalEvents = eventData;
+      try {
+        const bridgeRes = await fetchBridgeStatus();
+        setBridgeConnected(bridgeRes.connected);
+        if (bridgeRes.data?.active_account) {
+          setActiveAntigravityProfile(bridgeRes.data.active_account);
+        }
+        if (bridgeRes.connected) {
+          const mRes = await fetchBridgeMeetings();
+          if (mRes.ok && mRes.events && mRes.events.length > 0) {
+            // Gabungkan event unik dari bridge
+            const existingIds = new Set(eventData.map(e => e.id));
+            const newBridgeEvents = mRes.events
+              .filter(e => !existingIds.has(e.id))
+              .map(e => ({
+                id: e.id,
+                judul: e.judul,
+                tanggal: e.tanggal,
+                waktu: e.waktu || 'WIB',
+                lokasi: e.lokasi || e.tempat || 'Kampus Tanjung Duren',
+                kategori: e.kategori || 'Rapat & Evaluasi',
+                pj: e.pj || 'BPH BEM FEB',
+                status: e.status || 'Mendatang',
+                deskripsi: e.deskripsi || e.agenda || 'Tersinkronisasi dari Telegram BEM'
+              }));
+            finalEvents = [...newBridgeEvents, ...eventData];
+          }
+        }
+      } catch (bridgeErr) {
+        console.warn('Bridge offline, menggunakan cache lokal:', bridgeErr);
+      }
+
+      setEvents(finalEvents);
       setAdvokasiList(advData);
       setDocuments(dataService.getDocuments());
       setDivisions(divData);
@@ -303,6 +344,9 @@ export default function App() {
         onOpenQuickTask={() => {
           setActiveTab('divisions');
         }}
+        onOpenAntigravityModal={() => setIsBridgeModalOpen(true)}
+        activeAntigravityProfile={activeAntigravityProfile}
+        bridgeConnected={bridgeConnected}
         cloudConfigured={cloudStatus.isConfigured}
       />
 
@@ -1186,6 +1230,12 @@ export default function App() {
         isOpen={Boolean(selectedTx)}
         onClose={() => setSelectedTx(null)}
         transaction={selectedTx}
+      />
+
+      <AntigravityBridgeModal
+        isOpen={isBridgeModalOpen}
+        onClose={() => setIsBridgeModalOpen(false)}
+        onSyncEvents={() => loadData()}
       />
     </div>
   );

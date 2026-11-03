@@ -8,6 +8,7 @@ import {
   Wallet,
   Cloud,
   Plus,
+  Bot,
 } from "lucide-react";
 import { ROLES, ROLE_PROFILES } from "../../domain/rbac";
 import { AdminBadge } from "../common/AdminComponents";
@@ -19,6 +20,9 @@ export default function AdminHeader({
   onOpenMobileSidebar,
   onOpenCloudConfig,
   onOpenQuickTask,
+  onOpenAntigravityModal,
+  activeAntigravityProfile,
+  bridgeConnected = false,
   cloudConfigured = false,
 }) {
   const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
@@ -159,6 +163,24 @@ export default function AdminHeader({
           <span className="hidden sm:inline">
             {cloudConfigured ? "Cloud Sync" : "Lokal Aktif"}
           </span>
+        </button>
+
+        {/* Antigravity AI Engine & Telegram Remote Pill */}
+        <button
+          type="button"
+          onClick={onOpenAntigravityModal}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-bold transition border cursor-pointer ${
+            bridgeConnected
+              ? "bg-blue-50 text-[#13539D] border-blue-200 hover:bg-blue-100 shadow-2xs"
+              : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+          }`}
+          title="Antigravity Multi-Account Switcher & Telegram Remote"
+        >
+          <Bot className={`size-3.5 ${bridgeConnected ? "text-[#13539D]" : "text-slate-400"}`} />
+          <span className="hidden sm:inline">
+            {activeAntigravityProfile ? activeAntigravityProfile.name.split(' ')[0] : 'Antigravity'}
+          </span>
+          <span className={`size-1.5 rounded-full ${bridgeConnected ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`}></span>
         </button>
 
         {/* Quick Role Switcher Pill (ABMAS Signature Feature) */}
