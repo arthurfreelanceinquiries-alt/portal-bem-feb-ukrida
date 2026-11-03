@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import LoginPage from './pages/LoginPage';
+import MemberPortal from './pages/MemberPortal';
 import {
   LayoutDashboard,
   CalendarCheck,
@@ -47,9 +49,36 @@ import AntigravityBridgeModal from './components/AntigravityBridgeModal';
 import { fetchBridgeStatus, fetchBridgeMeetings } from './lib/bridgeClient';
 
 export default function App() {
-  // Role & Persona State (Default: BPH / Ketua Umum Arthur Reezan)
+  // ── AUTH STATE ─────────────────────────────────────────────────────────────
+  const [currentUser, setCurrentUser] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('bem_logged_user') || 'null'); } catch { return null; }
+  });
+
+  const handleLogin = (user) => {
+    localStorage.setItem('bem_logged_user', JSON.stringify(user));
+    setCurrentUser(user);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('bem_logged_user');
+    setCurrentUser(null);
+  };
+
+  // Jika belum login → halaman login
+  if (!currentUser) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
+
+  // Jika login sebagai anggota/fungsionaris → Portal Anggota
+  if (currentUser.portalType === 'member') {
+    return <MemberPortal user={currentUser} onLogout={handleLogout} />;
+  }
+
+  // Jika login sebagai admin/BPH → lanjut ke Admin Portal (kode di bawah)
+
+  // Role & Persona State — dipetakan dari user yang login
   const [activeRoleKey, setActiveRoleKey] = useState(() => {
-    return localStorage.getItem('bem_active_role') || ROLES.BPH_KETUA;
+    return currentUser.role || localStorage.getItem('bem_active_role') || ROLES.BPH_KETUA;
   });
   const activeRole = ROLE_PROFILES[activeRoleKey] || ROLE_PROFILES[ROLES.BPH_KETUA];
 
@@ -353,6 +382,8 @@ export default function App() {
         }}
         onOpenAntigravityModal={() => setIsBridgeModalOpen(true)}
         activeAntigravityProfile={activeAntigravityProfile}
+        onLogout={handleLogout}
+        currentUser={currentUser}
         bridgeConnected={bridgeConnected}
         cloudConfigured={cloudStatus.isConfigured}
       />

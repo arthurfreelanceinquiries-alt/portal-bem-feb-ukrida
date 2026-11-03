@@ -9,6 +9,7 @@ import {
   Cloud,
   Plus,
   Bot,
+  LogOut,
 } from "lucide-react";
 import { ROLES, ROLE_PROFILES } from "../../domain/rbac";
 import { AdminBadge } from "../common/AdminComponents";
@@ -24,6 +25,8 @@ export default function AdminHeader({
   activeAntigravityProfile,
   bridgeConnected = false,
   cloudConfigured = false,
+  onLogout,
+  currentUser,
 }) {
   const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -285,6 +288,19 @@ export default function AdminHeader({
             </div>
           )}
         </div>
+
+        {/* Tombol Logout */}
+        {onLogout && (
+          <button
+            type="button"
+            onClick={onLogout}
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-rose-50 hover:border-rose-300 hover:text-rose-700 text-slate-600 text-xs font-semibold transition cursor-pointer shrink-0"
+            title="Keluar dari portal"
+          >
+            <LogOut className="size-3.5" />
+            <span>Keluar</span>
+          </button>
+        )}
       </div>
     </header>
   );
