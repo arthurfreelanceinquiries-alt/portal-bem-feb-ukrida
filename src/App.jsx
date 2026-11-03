@@ -36,6 +36,11 @@ import CalendarTimeline from './components/CalendarTimeline';
 import ResourceHub from './components/ResourceHub';
 import AdvokasiTracker from './components/AdvokasiTracker';
 import DivisionWorkspace from './components/DivisionWorkspace';
+import OrganizationView from './components/OrganizationView';
+import AbsensiRapatView from './components/AbsensiRapatView';
+import ProkerManagementView from './components/ProkerManagementView';
+import FinanceView from './components/FinanceView';
+import AuditLogView from './components/AuditLogView';
 import AntigravityBridgeModal from './components/AntigravityBridgeModal';
 import { fetchBridgeStatus, fetchBridgeMeetings } from './lib/bridgeClient';
 
@@ -333,7 +338,7 @@ export default function App() {
     : 85;
 
   return (
-    <div className="min-h-screen bg-[#081225] text-slate-100 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
       {/* 1. TOP HEADER ALA ABMAS (Role Switcher Pill, UKRIDA Brand, Cloud Status) */}
       <AdminHeader
         activeRole={activeRoleKey}
@@ -488,23 +493,25 @@ export default function App() {
                 />
               </div>
 
-              {/* KONTEN KHUSUS UNTUK ANGGOTA / STAF (DUTY ROSTER PERSONAL) */}
+              {/* KONTEN KHUSUS UNTUK ANGGOTA / STAF (DUTY ROSTER PERSONAL ALA ABMAS) */}
               {activeRoleKey === ROLES.ANGGOTA_STAF && (
-                <div className="panel-card mt-6" style={{ borderLeft: '4px solid #10b981' }}>
-                  <div className="panel-header">
-                    <div className="panel-title" style={{ color: '#10b981' }}>
-                      <CheckSquare size={18} /> Tugas Personal Anda ({pendingTasksForRole.length} Tertunda)
+                <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xs border-l-4 border-l-emerald-500 space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                    <div className="flex items-center gap-2 font-['Plus_Jakarta_Sans',sans-serif] text-sm font-extrabold text-slate-900">
+                      <CheckSquare className="size-4 text-emerald-600" />
+                      <span>Tugas Personal Anda ({pendingTasksForRole.length} Tertunda)</span>
                     </div>
                     <button
-                      className="btn btn-secondary btn-sm"
+                      type="button"
+                      className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer"
                       onClick={() => setActiveTab('divisions')}
                     >
                       Buka Roster Lengkap
                     </button>
                   </div>
-                  <div className="panel-body">
+                  <div>
                     {pendingTasksForRole.length === 0 ? (
-                      <div className="text-center py-6 text-slate-400 text-sm">
+                      <div className="text-center py-6 text-slate-400 text-xs font-medium">
                         🎉 Hebat! Semua tugas Anda telah selesai dikerjakan. Pertahankan performa KPI Anda!
                       </div>
                     ) : (
@@ -512,29 +519,31 @@ export default function App() {
                         {pendingTasksForRole.map((t) => (
                           <div
                             key={t.id}
-                            className="p-4 rounded-xl bg-slate-900/60 border border-slate-700/60 flex flex-col justify-between"
+                            className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-emerald-300 transition shadow-2xs flex flex-col justify-between"
                           >
                             <div>
                               <div className="flex items-center justify-between gap-2 mb-2">
                                 <AdminBadge variant="yellow">{t.kategoriProker || 'Divisi'}</AdminBadge>
-                                <span className="font-mono text-xs text-rose-400 font-bold">
+                                <span className="font-mono text-[10px] text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
                                   Batas: {t.deadline}
                                 </span>
                               </div>
-                              <h4 className="text-sm font-bold text-white">{t.judul}</h4>
-                              <p className="text-xs text-slate-400 mt-1 line-clamp-2">
+                              <h4 className="text-xs font-extrabold text-slate-900">{t.judul}</h4>
+                              <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
                                 {t.keterangan || "Lakukan koordinasi dengan koordinator divisi untuk eksekusi tugas ini."}
                               </p>
                             </div>
-                            <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between">
-                              <span className="text-xs text-slate-400">
+                            <div className="mt-3 pt-3 border-t border-slate-200/60 flex items-center justify-between">
+                              <span className="text-[10px] text-slate-500 font-mono">
                                 Subtugas: {(t.subtasks || []).filter((s) => s.completed).length} / {(t.subtasks || []).length}
                               </span>
                               <button
-                                className="btn btn-primary btn-sm text-xs py-1"
+                                type="button"
+                                className="px-2.5 py-1 rounded-xl bg-[#13539D] hover:bg-[#0d417d] text-white text-[11px] font-bold transition flex items-center gap-1 cursor-pointer"
                                 onClick={() => setActiveTab('divisions')}
                               >
-                                Kerjakan Tugas <ChevronRight size={14} />
+                                <span>Kerjakan</span>
+                                <ChevronRight className="size-3" />
                               </button>
                             </div>
                           </div>
@@ -547,67 +556,63 @@ export default function App() {
 
               {/* Pending Approvals Section (Khusus Ketua BPH / Alert) */}
               {prokerPending.length > 0 && (
-                <div className="panel-card" style={{ borderLeft: '4px solid var(--amber)' }}>
-                  <div className="panel-header">
-                    <div className="panel-title" style={{ color: '#f59e0b' }}>
-                      <AlertCircle size={20} color="var(--amber)" /> Usulan Program Kerja Butuh Persetujuan ({prokerPending.length})
+                <div className="rounded-3xl border border-amber-200 bg-amber-50/40 p-6 shadow-xs space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-amber-200/60">
+                    <div className="flex items-center gap-2 font-['Plus_Jakarta_Sans',sans-serif] text-sm font-extrabold text-amber-900">
+                      <AlertCircle className="size-4 text-amber-600" />
+                      <span>Usulan Program Kerja Butuh Persetujuan ({prokerPending.length})</span>
                     </div>
                     {activeRoleKey === ROLES.BPH_KETUA && (
-                      <span style={{ fontSize: '0.78rem', color: 'var(--amber)', fontWeight: 600 }}>
-                        Anda login sebagai Ketua BPH (Memiliki Hak Approval)
+                      <span className="text-[11px] text-amber-700 font-bold bg-amber-100/70 px-2.5 py-0.5 rounded-full border border-amber-200">
+                        Akses Validasi Ketua BPH
                       </span>
                     )}
                   </div>
-                  <div className="panel-body" style={{ padding: '16px 24px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '14px' }}>
+                  <div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {prokerPending.map((p) => (
                         <div
                           key={p.id}
-                          style={{
-                            background: 'rgba(0,0,0,0.25)',
-                            padding: '16px',
-                            borderRadius: '12px',
-                            border: '1px solid var(--border-subtle)',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            justifyContent: 'space-between'
-                          }}
+                          className="p-4 rounded-2xl border border-amber-200 bg-white shadow-2xs flex flex-col justify-between"
                         >
                           <div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                              <span className="badge badge-amber">Menunggu Approval</span>
-                              <span className="mono" style={{ fontSize: '0.82rem', fontWeight: 700, color: '#fff' }}>
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                Menunggu Approval
+                              </span>
+                              <span className="font-mono text-xs font-bold text-slate-800">
                                 Rp {Number(p.pagu_anggaran).toLocaleString('id-ID')}
                               </span>
                             </div>
-                            <h4 style={{ fontSize: '0.98rem', marginBottom: '6px' }}>{p.nama_proker}</h4>
-                            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '10px' }}>
-                              {p.departemen} • PJ: {p.pj}
+                            <h4 className="text-xs font-extrabold text-slate-900 mb-1">{p.nama_proker}</h4>
+                            <p className="text-[11px] text-[#13539D] font-medium mb-1">
+                              {p.departemen} • PJ: <span className="text-slate-700">{p.pj}</span>
                             </p>
-                            <p style={{ fontSize: '0.78rem', color: 'var(--text-dim)', marginBottom: '14px' }}>
+                            <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed mb-3">
                               "{p.deskripsi}"
                             </p>
                           </div>
 
                           {activeRoleKey === ROLES.BPH_KETUA ? (
-                            <div style={{ display: 'flex', gap: '10px' }}>
+                            <div className="flex gap-2 pt-2 border-t border-slate-100">
                               <button
-                                className="btn btn-emerald btn-sm"
-                                style={{ flex: 1, justifyContent: 'center' }}
+                                type="button"
+                                className="flex-1 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
                                 onClick={() => handleApproveProker(p.id, true)}
                               >
-                                <Check size={14} /> Setujui
+                                <Check className="size-3.5" />
+                                <span>Setujui</span>
                               </button>
                               <button
-                                className="btn btn-secondary btn-sm"
-                                style={{ color: 'var(--rose)' }}
+                                type="button"
+                                className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition border border-rose-200 cursor-pointer"
                                 onClick={() => handleApproveProker(p.id, false)}
                               >
                                 Tolak
                               </button>
                             </div>
                           ) : (
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', fontStyle: 'italic' }}>
+                            <div className="text-[10px] text-slate-400 italic pt-2 border-t border-slate-100">
                               Menunggu persetujuan Ketua Umum BPH
                             </div>
                           )}
@@ -618,51 +623,47 @@ export default function App() {
                 </div>
               )}
 
-              {/* Grid 2 Kolom: Proker Aktif & Transaksi Terbaru */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '24px' }}>
+              {/* Grid 2 Kolom: Proker Aktif & Transaksi Terbaru Ala ABMAS */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Proker Aktif Overview */}
-                <div className="panel-card">
-                  <div className="panel-header">
-                    <div className="panel-title">
-                      <CalendarCheck size={18} color="var(--sky)" /> Serapan Anggaran Proker Berjalan
+                <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xs flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+                      <div className="flex items-center gap-2 font-['Plus_Jakarta_Sans',sans-serif] text-sm font-extrabold text-slate-900">
+                        <CalendarCheck className="size-4 text-[#13539D]" />
+                        <span>Serapan Anggaran Proker Berjalan</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="text-xs font-bold text-[#13539D] hover:underline cursor-pointer"
+                        onClick={() => setActiveTab('proker')}
+                      >
+                        Lihat Semua Proker →
+                      </button>
                     </div>
-                    <button className="btn btn-secondary btn-sm" onClick={() => setActiveTab('proker')}>
-                      Lihat Semua
-                    </button>
-                  </div>
-                  <div className="panel-body">
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+                    <div className="space-y-3.5">
                       {prokerList.slice(0, 3).map((p) => {
                         const percent = Math.min(
                           Math.round(((p.realisasi_anggaran || 0) / (p.pagu_anggaran || 1)) * 100),
                           100
                         );
                         return (
-                          <div key={p.id} style={{ background: 'rgba(0,0,0,0.2)', padding: '14px', borderRadius: '10px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                              <strong style={{ fontSize: '0.9rem' }}>{p.nama_proker}</strong>
-                              <span
-                                className={`badge ${
-                                  p.status === 'Berjalan'
-                                    ? 'badge-sky'
-                                    : p.status === 'Disetujui'
-                                    ? 'badge-emerald'
-                                    : p.status === 'Selesai'
-                                    ? 'badge-emerald'
-                                    : 'badge-amber'
-                                }`}
-                              >
+                          <div key={p.id} className="p-3.5 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-white transition">
+                            <div className="flex justify-between items-center mb-1.5">
+                              <strong className="text-xs font-bold text-slate-900">{p.nama_proker}</strong>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-[#13539D] border border-blue-200">
                                 {p.status}
                               </span>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                            <div className="flex justify-between text-[11px] text-slate-500 font-mono mb-2">
                               <span>Realisasi: Rp {Number(p.realisasi_anggaran || 0).toLocaleString('id-ID')}</span>
                               <span>Pagu: Rp {Number(p.pagu_anggaran).toLocaleString('id-ID')}</span>
                             </div>
-                            <div className="progress-track">
-                              <div className="progress-fill" style={{ width: `${percent}%` }}></div>
+                            <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                              <div className="bg-[#13539D] h-full rounded-full transition-all duration-300" style={{ width: `${percent}%` }}></div>
                             </div>
-                            <div style={{ textAlign: 'right', fontSize: '0.72rem', color: 'var(--sky)', marginTop: '4px' }}>
+                            <div className="text-right text-[10px] font-bold text-[#13539D] font-mono mt-1">
                               Serapan: {percent}%
                             </div>
                           </div>
@@ -673,64 +674,55 @@ export default function App() {
                 </div>
 
                 {/* Transaksi Kas Terbaru */}
-                <div className="panel-card">
-                  <div className="panel-header">
-                    <div className="panel-title">
-                      <Wallet size={18} color="var(--emerald)" /> Mutasi Kas Terbaru
+                <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xs flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-2">
+                      <div className="flex items-center gap-2 font-['Plus_Jakarta_Sans',sans-serif] text-sm font-extrabold text-slate-900">
+                        <Wallet className="size-4 text-emerald-600" />
+                        <span>Mutasi Kas Terbaru</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="text-xs font-bold text-[#13539D] hover:underline cursor-pointer"
+                        onClick={() => setActiveTab('finance')}
+                      >
+                        Buku Kas Lengkap →
+                      </button>
                     </div>
-                    <button className="btn btn-secondary btn-sm" onClick={() => setActiveTab('finance')}>
-                      Buku Kas
-                    </button>
-                  </div>
-                  <div className="panel-body" style={{ padding: '10px 16px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      {transactions.slice(0, 5).map((t) => (
+
+                    <div className="divide-y divide-slate-100">
+                      {transactions.slice(0, 4).map((t) => (
                         <div
                           key={t.id}
                           onClick={() => setSelectedTx(t)}
-                          style={{
-                            padding: '12px 8px',
-                            borderBottom: '1px solid var(--border-subtle)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            cursor: 'pointer'
-                          }}
+                          className="py-3 flex items-center justify-between hover:bg-slate-50/80 px-2 rounded-xl transition cursor-pointer"
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div className="flex items-center gap-3">
                             <div
-                              style={{
-                                width: '36px',
-                                height: '36px',
-                                borderRadius: '8px',
-                                background: t.tipe === 'Pemasukan' ? 'var(--emerald-bg)' : 'var(--rose-bg)',
-                                color: t.tipe === 'Pemasukan' ? 'var(--emerald)' : 'var(--rose)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                              }}
+                              className={`size-8 rounded-xl flex items-center justify-center shrink-0 ${
+                                t.tipe === 'Pemasukan'
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                  : 'bg-rose-50 text-rose-700 border border-rose-200'
+                              }`}
                             >
-                              {t.tipe === 'Pemasukan' ? <ArrowDownRight size={18} /> : <ArrowUpRight size={18} />}
+                              {t.tipe === 'Pemasukan' ? <ArrowDownRight className="size-4" /> : <ArrowUpRight className="size-4" />}
                             </div>
                             <div>
-                              <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#fff' }}>{t.keterangan}</div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                              <div className="text-xs font-extrabold text-slate-900 line-clamp-1">{t.keterangan}</div>
+                              <div className="text-[11px] text-slate-500 font-mono">
                                 {t.tanggal} • {t.kategori}
                               </div>
                             </div>
                           </div>
-                          <div style={{ textAlign: 'right' }}>
+                          <div className="text-right">
                             <div
-                              className="mono"
-                              style={{
-                                fontWeight: 700,
-                                fontSize: '0.9rem',
-                                color: t.tipe === 'Pemasukan' ? 'var(--emerald)' : '#fff'
-                              }}
+                              className={`font-mono text-xs font-bold ${
+                                t.tipe === 'Pemasukan' ? 'text-emerald-700' : 'text-slate-800'
+                              }`}
                             >
                               {t.tipe === 'Pemasukan' ? '+' : '-'} Rp {Number(t.jumlah).toLocaleString('id-ID')}
                             </div>
-                            <span style={{ fontSize: '0.7rem', color: 'var(--sky)' }}>Lihat Nota</span>
+                            <span className="text-[10px] text-[#13539D] font-bold">Nota Tersedia</span>
                           </div>
                         </div>
                       ))}
@@ -739,46 +731,43 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Grid 2 Kolom: Agenda Terdekat & Advokasi Kampus */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '24px', marginTop: '24px' }}>
+              {/* Grid 2 Kolom: Agenda Terdekat & Advokasi Kampus Ala ABMAS */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Agenda Terdekat */}
-                <div className="panel-card">
-                  <div className="panel-header">
-                    <div className="panel-title">
-                      <CalendarDays size={18} color="var(--amber)" /> Agenda & Timeline Kerja BEM Terdekat
+                <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xs flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+                      <div className="flex items-center gap-2 font-['Plus_Jakarta_Sans',sans-serif] text-sm font-extrabold text-slate-900">
+                        <CalendarDays className="size-4 text-amber-600" />
+                        <span>Agenda & Timeline Kerja BEM Terdekat</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="text-xs font-bold text-[#13539D] hover:underline cursor-pointer"
+                        onClick={() => setActiveTab('calendar')}
+                      >
+                        Buka Kalender →
+                      </button>
                     </div>
-                    <button className="btn btn-secondary btn-sm" onClick={() => setActiveTab('calendar')}>
-                      Buka Kalender
-                    </button>
-                  </div>
-                  <div className="panel-body" style={{ padding: '12px 18px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+                    <div className="space-y-3">
                       {events.slice(0, 3).map((e) => (
                         <div
                           key={e.id}
-                          style={{
-                            background: 'rgba(0,0,0,0.2)',
-                            padding: '12px 14px',
-                            borderRadius: '10px',
-                            borderLeft: '3px solid var(--amber)',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            gap: '12px'
-                          }}
+                          className="p-3.5 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-amber-300 transition flex justify-between items-center gap-3"
                         >
                           <div>
-                            <div style={{ fontWeight: 600, fontSize: '0.88rem', color: '#fff', marginBottom: '2px' }}>
+                            <div className="text-xs font-extrabold text-slate-900 mb-0.5">
                               {e.judul}
                             </div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            <div className="text-[11px] text-slate-500 font-mono">
                               {e.tanggal} • {e.waktu}
                             </div>
-                            <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', marginTop: '2px' }}>
+                            <div className="text-[11px] text-slate-600 mt-0.5">
                               {e.lokasi}
                             </div>
                           </div>
-                          <span className="badge badge-amber" style={{ fontSize: '0.68rem', whiteSpace: 'nowrap' }}>
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap shrink-0">
                             {e.kategori}
                           </span>
                         </div>
@@ -788,43 +777,40 @@ export default function App() {
                 </div>
 
                 {/* Advokasi Isu Mahasiswa Terkini */}
-                <div className="panel-card">
-                  <div className="panel-header">
-                    <div className="panel-title">
-                      <MessageSquareCheck size={18} color="var(--sky)" /> Isu Advokasi Mahasiswa FEB Dikawal
+                <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xs flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+                      <div className="flex items-center gap-2 font-['Plus_Jakarta_Sans',sans-serif] text-sm font-extrabold text-slate-900">
+                        <MessageSquareCheck className="size-4 text-[#13539D]" />
+                        <span>Isu Advokasi Mahasiswa FEB Dikawal</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="text-xs font-bold text-[#13539D] hover:underline cursor-pointer"
+                        onClick={() => setActiveTab('advocacy')}
+                      >
+                        Buka Advokasi →
+                      </button>
                     </div>
-                    <button className="btn btn-secondary btn-sm" onClick={() => setActiveTab('advocacy')}>
-                      Buka Advokasi
-                    </button>
-                  </div>
-                  <div className="panel-body" style={{ padding: '12px 18px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+                    <div className="space-y-3">
                       {advokasiList.slice(0, 3).map((a) => (
                         <div
                           key={a.id}
-                          style={{
-                            background: 'rgba(0,0,0,0.2)',
-                            padding: '12px 14px',
-                            borderRadius: '10px',
-                            borderLeft: '3px solid var(--sky)',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            gap: '12px'
-                          }}
+                          className="p-3.5 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-blue-300 transition flex justify-between items-center gap-3"
                         >
                           <div>
-                            <div style={{ fontWeight: 600, fontSize: '0.88rem', color: '#fff', marginBottom: '2px' }}>
+                            <div className="text-xs font-extrabold text-slate-900 mb-0.5">
                               {a.isu}
                             </div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            <div className="text-[11px] text-slate-500 font-mono">
                               Bidang: {a.bidang} • Update: {a.updateTerakhir}
                             </div>
-                            <div style={{ fontSize: '0.72rem', color: 'var(--emerald)', marginTop: '2px' }}>
+                            <div className="text-[11px] text-emerald-700 font-medium mt-0.5">
                               {a.tindakLanjut}
                             </div>
                           </div>
-                          <span className="badge badge-sky" style={{ fontSize: '0.68rem', whiteSpace: 'nowrap' }}>
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-[#13539D] border border-blue-200 whitespace-nowrap shrink-0">
                             {a.status}
                           </span>
                         </div>
@@ -834,6 +820,13 @@ export default function App() {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* ============================================================== */}
+          {/* TAB: STRUKTUR ORGANISASI (ALA ABMAS ORGANIZATION PAGE)         */}
+          {/* ============================================================== */}
+          {activeTab === 'organization' && (
+            <OrganizationView activeRole={activeRole} />
           )}
 
           {/* ============================================================== */}
@@ -854,218 +847,35 @@ export default function App() {
           )}
 
           {/* ============================================================== */}
-          {/* TAB 3: PROGRAM KERJA (PROKER BEM FEB)                          */}
+          {/* TAB: ABSENSI & PRESENSI RAPAT (ALA ABMAS CHURCH ADMIN ABSENSI) */}
+          {/* ============================================================== */}
+          {activeTab === 'absensi' && (
+            <AbsensiRapatView activeRole={activeRole} />
+          )}
+
+          {/* ============================================================== */}
+          {/* TAB 3: PROGRAM KERJA & PAGU ANGGARAN (ALA ABMAS)               */}
           {/* ============================================================== */}
           {activeTab === 'proker' && (
-            <div className="panel-card">
-              <div className="panel-header">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                  <div className="panel-title">
-                    <CalendarCheck size={20} color="var(--sky)" /> Daftar Program Kerja FEB ({filteredProker.length})
-                  </div>
-                  {/* Status Filter Chips */}
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    {['Semua', 'Diajukan', 'Disetujui', 'Berjalan', 'Selesai'].map((f) => (
-                      <button
-                        key={f}
-                        className={`btn btn-sm ${prokerFilter === f ? 'btn-primary' : 'btn-secondary'}`}
-                        onClick={() => setProkerFilter(f)}
-                      >
-                        {f}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <button className="btn btn-primary btn-sm" onClick={() => setIsAddProkerOpen(true)}>
-                  <PlusCircle size={16} /> Usulkan Proker Baru
-                </button>
-              </div>
-
-              <div className="panel-body">
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '20px' }}>
-                  {filteredProker.map((p) => {
-                    const percent = Math.min(
-                      Math.round(((p.realisasi_anggaran || 0) / (p.pagu_anggaran || 1)) * 100),
-                      100
-                    );
-                    return (
-                      <div
-                        key={p.id}
-                        style={{
-                          background: 'rgba(0,0,0,0.3)',
-                          border: '1px solid var(--border-subtle)',
-                          borderRadius: '14px',
-                          padding: '20px',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          justifyContent: 'space-between',
-                          gap: '16px'
-                        }}
-                      >
-                        <div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                            <span
-                              className={`badge ${
-                                p.status === 'Berjalan'
-                                  ? 'badge-sky'
-                                  : p.status === 'Disetujui'
-                                  ? 'badge-emerald'
-                                  : p.status === 'Selesai'
-                                  ? 'badge-emerald'
-                                  : 'badge-amber'
-                              }`}
-                            >
-                              {p.status}
-                            </span>
-                            <span className="mono" style={{ fontSize: '0.85rem', fontWeight: 700, color: '#fff' }}>
-                              Rp {Number(p.pagu_anggaran).toLocaleString('id-ID')}
-                            </span>
-                          </div>
-                          <h3 style={{ fontSize: '1.05rem', marginBottom: '6px' }}>{p.nama_proker}</h3>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px' }}>
-                            {p.departemen} • PJ: <strong style={{ color: '#fff' }}>{p.pj}</strong>
-                          </div>
-                          <p style={{ fontSize: '0.82rem', color: 'var(--text-dim)', marginBottom: '14px' }}>
-                            {p.deskripsi}
-                          </p>
-
-                          <div style={{ marginBottom: '6px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                              <span>Serapan Anggaran</span>
-                              <span>{percent}% (Rp {Number(p.realisasi_anggaran || 0).toLocaleString('id-ID')})</span>
-                            </div>
-                            <div className="progress-track" style={{ marginTop: '6px' }}>
-                              <div className="progress-fill" style={{ width: `${percent}%` }}></div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-subtle)', paddingTop: '12px' }}>
-                          <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>
-                            Target: {p.target_selesai}
-                          </span>
-                          {p.status === 'Diajukan' && activeRoleKey === ROLES.BPH_KETUA && (
-                            <button
-                              className="btn btn-emerald btn-sm"
-                              onClick={() => handleApproveProker(p.id, true)}
-                            >
-                              <Check size={14} /> Setujui
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
+            <ProkerManagementView
+              prokerList={prokerList}
+              onOpenAddModal={() => setIsAddProkerOpen(true)}
+              onApproveProker={handleApproveProker}
+              activeRoleKey={activeRoleKey}
+            />
           )}
 
           {/* ============================================================== */}
           {/* TAB 4: BUKU KAS UMUM & KEUANGAN (ALA ABMAS)                    */}
           {/* ============================================================== */}
           {(activeTab === 'finance' || activeTab === 'keuangan') && (
-            <div className="panel-card">
-              <div className="panel-header">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                  <div className="panel-title">
-                    <Wallet size={20} color="var(--emerald)" /> Buku Kas Umum BEM FEB ({filteredTransactions.length})
-                  </div>
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    {['Semua', 'Pemasukan', 'Pengeluaran'].map((f) => (
-                      <button
-                        key={f}
-                        className={`btn btn-sm ${txFilter === f ? 'btn-primary' : 'btn-secondary'}`}
-                        onClick={() => setTxFilter(f)}
-                      >
-                        {f}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="btn btn-secondary btn-sm" onClick={handleExportCSV}>
-                    <Download size={15} /> Export CSV
-                  </button>
-                  {hasPermission(activeRoleKey, 'manageFinances') && (
-                    <button className="btn btn-emerald btn-sm" onClick={() => setIsAddTxOpen(true)}>
-                      <PlusCircle size={15} /> Catat Transaksi
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="panel-body" style={{ overflowX: 'auto' }}>
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Tanggal</th>
-                      <th>Kategori & Keterangan</th>
-                      <th>Program Kerja Terkait</th>
-                      <th>Tipe</th>
-                      <th>Jumlah</th>
-                      <th>Bukti Nota</th>
-                      <th>Status Verifikasi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredTransactions.map((t) => (
-                      <tr key={t.id}>
-                        <td className="mono" style={{ fontSize: '0.82rem', whiteSpace: 'nowrap' }}>
-                          {t.tanggal}
-                        </td>
-                        <td>
-                          <div style={{ fontWeight: 600, color: '#fff', fontSize: '0.88rem' }}>
-                            {t.keterangan}
-                          </div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                            Kategori: {t.kategori} • Dicatat: {t.dicatat_oleh}
-                          </div>
-                        </td>
-                        <td style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                          {t.nama_proker || '-'}
-                        </td>
-                        <td>
-                          <span className={`badge ${t.tipe === 'Pemasukan' ? 'badge-emerald' : 'badge-rose'}`}>
-                            {t.tipe}
-                          </span>
-                        </td>
-                        <td
-                          className="mono"
-                          style={{
-                            fontWeight: 700,
-                            color: t.tipe === 'Pemasukan' ? 'var(--emerald)' : '#fff',
-                            whiteSpace: 'nowrap'
-                          }}
-                        >
-                          {t.tipe === 'Pemasukan' ? '+' : '-'} Rp {Number(t.jumlah).toLocaleString('id-ID')}
-                        </td>
-                        <td>
-                          {t.bukti_nota_url ? (
-                            <button
-                              className="btn btn-secondary btn-sm"
-                              style={{ padding: '4px 8px', fontSize: '0.72rem' }}
-                              onClick={() => setSelectedTx(t)}
-                            >
-                              <Eye size={13} /> Bukti Nota
-                            </button>
-                          ) : (
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>-</span>
-                          )}
-                        </td>
-                        <td>
-                          <span className="badge badge-emerald">
-                            <Check size={12} /> {t.status_verifikasi || 'Terverifikasi'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <FinanceView
+              transactions={transactions}
+              onOpenAddModal={() => setIsAddTxOpen(true)}
+              onExportCSV={handleExportCSV}
+              onSelectReceipt={(t) => setSelectedTx(t)}
+              activeRoleKey={activeRoleKey}
+            />
           )}
 
           {/* ============================================================== */}
@@ -1076,7 +886,7 @@ export default function App() {
               events={events}
               prokerList={prokerList}
               onAddEvent={handleAddEvent}
-              activeUser={{ name: activeRole.name, role: activeRole.title }}
+              activeRole={activeRole}
             />
           )}
 
@@ -1095,58 +905,15 @@ export default function App() {
               advokasiList={advokasiList}
               onAddAdvokasi={handleAddAdvokasi}
               onUpdateStatus={handleUpdateAdvokasiStatus}
-              activeUser={{ name: activeRole.name, role: activeRole.title }}
+              activeRole={activeRole}
             />
           )}
 
           {/* ============================================================== */}
-          {/* TAB 8: AUDIT TRAIL & LOG KOLABORASI                            */}
+          {/* TAB 8: AUDIT TRAIL & LOG KOLABORASI (ALA ABMAS)                */}
           {/* ============================================================== */}
-          {activeTab === 'logs' && (
-            <div className="panel-card">
-              <div className="panel-header">
-                <div className="panel-title">
-                  <History size={20} color="var(--sky)" /> Log Aktivitas & Audit Trail Organisasi ({logs.length})
-                </div>
-              </div>
-              <div className="panel-body">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {logs.map((log) => (
-                    <div
-                      key={log.id}
-                      style={{
-                        padding: '12px 16px',
-                        background: 'rgba(0,0,0,0.2)',
-                        borderRadius: '10px',
-                        borderLeft: '3px solid var(--sky)',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        gap: '12px'
-                      }}
-                    >
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                          <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#fff' }}>
-                            {log.user_name}
-                          </span>
-                          <span className="badge badge-sky" style={{ fontSize: '0.7rem' }}>
-                            {log.user_role}
-                          </span>
-                          <span style={{ fontSize: '0.82rem', color: 'var(--emerald)', fontWeight: 600 }}>
-                            {log.action}
-                          </span>
-                        </div>
-                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{log.details}</p>
-                      </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
-                        <Clock size={13} /> {log.timestamp}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+          {(activeTab === 'logs' || activeTab === 'audit') && (
+            <AuditLogView logs={logs} />
           )}
         </main>
       </div>
