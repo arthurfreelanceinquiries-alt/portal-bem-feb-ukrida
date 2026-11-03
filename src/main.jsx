@@ -2,6 +2,10 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
+import { ensureSeedData } from './domain/mockData.js'
+
+// Seed demo data once so every ABMAS feature has something to render.
+ensureSeedData()
 
 const container = document.getElementById('root')
 if (container) {

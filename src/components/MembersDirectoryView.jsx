@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Users,
   Search,
@@ -20,6 +20,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { AdminPageHeader, AdminBadge } from './common/AdminComponents';
+import PaginationComponent from './common/PaginationComponent';
 import { ROLES } from '../domain/rbac';
 
 // Mock data fungsionaris BEM FEB UKRIDA 2026 autentik
@@ -240,6 +241,8 @@ export default function MembersDirectoryView({ activeRole }) {
   const [selectedStatus, setSelectedStatus] = useState('Semua');
   const [selectedMember, setSelectedMember] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Filtered members list
   const filteredMembers = useMemo(() => {
@@ -259,6 +262,18 @@ export default function MembersDirectoryView({ activeRole }) {
       return matchSearch && matchDiv && matchStatus;
     });
   }, [members, searchQuery, selectedDivision, selectedStatus]);
+
+  // Reset ke halaman pertama setiap filter/pencarian berubah
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedDivision, selectedStatus]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredMembers.length / itemsPerPage));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedMembers = filteredMembers.slice(
+    (safePage - 1) * itemsPerPage,
+    safePage * itemsPerPage
+  );
 
   // Export CSV
   const handleExportCSV = () => {
@@ -433,7 +448,7 @@ export default function MembersDirectoryView({ activeRole }) {
                   </td>
                 </tr>
               ) : (
-                filteredMembers.map((m) => {
+                paginatedMembers.map((m) => {
                   const initials = m.name
                     .split(' ')
                     .map((n) => n[0])
@@ -536,10 +551,19 @@ export default function MembersDirectoryView({ activeRole }) {
           </table>
         </div>
 
-        {/* Footer info */}
-        <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-          <span>Menampilkan <b>{filteredMembers.length}</b> dari {members.length} fungsionaris</span>
-          <span className="font-mono text-[11px] text-slate-400">Update Terakhir: Kepengurusan BEM FEB 2026</span>
+        {/* Footer info & pagination */}
+        <div className="pt-1">
+          <PaginationComponent
+            currentPage={safePage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filteredMembers.length}
+            itemsPerPage={itemsPerPage}
+          />
+          <div className="mt-2 flex flex-col gap-1 text-[10px] text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+            <span>Dari total {members.length} fungsionaris terdaftar</span>
+            <span className="font-mono">Update Terakhir: Kepengurusan BEM FEB 2026</span>
+          </div>
         </div>
       </div>
 

@@ -46,39 +46,22 @@ import ProkerManagementView from './components/ProkerManagementView';
 import FinanceView from './components/FinanceView';
 import AuditLogView from './components/AuditLogView';
 import AntigravityBridgeModal from './components/AntigravityBridgeModal';
+import AbsensiInputView from './components/AbsensiInputView';
+import DivisiPicView from './components/DivisiPicView';
+import UserManagementView from './components/UserManagementView';
+import ImportExportView from './components/ImportExportView';
+import AnnouncementView from './components/AnnouncementView';
+import PengajuanView from './components/PengajuanView';
+import CareTrackerView from './components/CareTrackerView';
+import PengaturanOrganisasiView from './components/PengaturanOrganisasiView';
+import DashboardTrends from './components/DashboardTrends';
 import { fetchBridgeStatus, fetchBridgeMeetings } from './lib/bridgeClient';
 
-export default function App() {
-  // ── AUTH STATE ─────────────────────────────────────────────────────────────
-  const [currentUser, setCurrentUser] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('bem_logged_user') || 'null'); } catch { return null; }
-  });
-
-  const handleLogin = (user) => {
-    localStorage.setItem('bem_logged_user', JSON.stringify(user));
-    setCurrentUser(user);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('bem_logged_user');
-    setCurrentUser(null);
-  };
-
-  // Jika belum login → halaman login
-  if (!currentUser) {
-    return <LoginPage onLogin={handleLogin} />;
-  }
-
-  // Jika login sebagai anggota/fungsionaris → Portal Anggota
-  if (currentUser.portalType === 'member') {
-    return <MemberPortal user={currentUser} onLogout={handleLogout} />;
-  }
-
-  // Jika login sebagai admin/BPH → lanjut ke Admin Portal (kode di bawah)
-
+function AdminPortal({ currentUser, onLogout }) {
   // Role & Persona State — dipetakan dari user yang login
   const [activeRoleKey, setActiveRoleKey] = useState(() => {
-    return currentUser.role || localStorage.getItem('bem_active_role') || ROLES.BPH_KETUA;
+    if (currentUser?.role && ROLE_PROFILES[currentUser.role]) return currentUser.role;
+    return localStorage.getItem('bem_active_role') || ROLES.BPH_KETUA;
   });
   const activeRole = ROLE_PROFILES[activeRoleKey] || ROLE_PROFILES[ROLES.BPH_KETUA];
 
@@ -382,7 +365,7 @@ export default function App() {
         }}
         onOpenAntigravityModal={() => setIsBridgeModalOpen(true)}
         activeAntigravityProfile={activeAntigravityProfile}
-        onLogout={handleLogout}
+        onLogout={onLogout}
         currentUser={currentUser}
         bridgeConnected={bridgeConnected}
         cloudConfigured={cloudStatus.isConfigured}
@@ -533,6 +516,9 @@ export default function App() {
                   onClick={() => setActiveTab('advocacy')}
                 />
               </div>
+
+              {/* Tren Kehadiran & Aktivitas Terkini */}
+              <DashboardTrends />
 
               {/* KONTEN KHUSUS UNTUK ANGGOTA / STAF (DUTY ROSTER PERSONAL ALA ABMAS) */}
               {activeRoleKey === ROLES.ANGGOTA_STAF && (
@@ -963,6 +949,62 @@ export default function App() {
           {(activeTab === 'logs' || activeTab === 'audit') && (
             <AuditLogView logs={logs} />
           )}
+
+          {/* ============================================================== */}
+          {/* TAB: INPUT ABSENSI MANUAL                                       */}
+          {/* ============================================================== */}
+          {activeTab === 'absensi_input' && (
+            <AbsensiInputView />
+          )}
+
+          {/* ============================================================== */}
+          {/* TAB: DIVISI & PIC                                                */}
+          {/* ============================================================== */}
+          {activeTab === 'divisi_pic' && (
+            <DivisiPicView />
+          )}
+
+          {/* ============================================================== */}
+          {/* TAB: MANAJEMEN PENGGUNA                                           */}
+          {/* ============================================================== */}
+          {activeTab === 'user_management' && (
+            <UserManagementView />
+          )}
+
+          {/* ============================================================== */}
+          {/* TAB: IMPORT / EXPORT DATA                                         */}
+          {/* ============================================================== */}
+          {activeTab === 'import_export' && (
+            <ImportExportView />
+          )}
+
+          {/* ============================================================== */}
+          {/* TAB: PENGUMUMAN                                                   */}
+          {/* ============================================================== */}
+          {activeTab === 'pengumuman' && (
+            <AnnouncementView />
+          )}
+
+          {/* ============================================================== */}
+          {/* TAB: PENGAJUAN                                                    */}
+          {/* ============================================================== */}
+          {activeTab === 'pengajuan' && (
+            <PengajuanView />
+          )}
+
+          {/* ============================================================== */}
+          {/* TAB: CARE TRACKER                                                 */}
+          {/* ============================================================== */}
+          {activeTab === 'care_tracker' && (
+            <CareTrackerView />
+          )}
+
+          {/* ============================================================== */}
+          {/* TAB: PENGATURAN ORGANISASI                                        */}
+          {/* ============================================================== */}
+          {activeTab === 'pengaturan' && (
+            <PengaturanOrganisasiView />
+          )}
         </main>
       </div>
 
@@ -1053,4 +1095,56 @@ export default function App() {
       />
     </div>
   );
+}
+
+const LOGGED_USER_KEY = 'bem_logged_user';
+
+function readStoredUser() {
+  try {
+    const raw = localStorage.getItem(LOGGED_USER_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export default function App() {
+  const [currentUser, setCurrentUser] = useState(readStoredUser);
+
+  const handleLogin = (user) => {
+    setCurrentUser(user);
+    try {
+      localStorage.setItem(LOGGED_USER_KEY, JSON.stringify(user));
+    } catch (e) {
+      console.warn('Gagal menyimpan sesi login:', e);
+    }
+  };
+
+  const handleUpdateUser = (updatedUser) => {
+    setCurrentUser(updatedUser);
+    try {
+      localStorage.setItem(LOGGED_USER_KEY, JSON.stringify(updatedUser));
+    } catch (e) {
+      console.warn('Gagal menyimpan perubahan profil:', e);
+    }
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    try {
+      localStorage.removeItem(LOGGED_USER_KEY);
+    } catch (e) {
+      console.warn('Gagal menghapus sesi login:', e);
+    }
+  };
+
+  if (!currentUser) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
+
+  if (currentUser.portalType === 'member') {
+    return <MemberPortal user={currentUser} onLogout={handleLogout} onUpdateUser={handleUpdateUser} />;
+  }
+
+  return <AdminPortal currentUser={currentUser} onLogout={handleLogout} />;
 }

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { ROLES, ROLE_PROFILES } from "../../domain/rbac";
 import { AdminBadge } from "../common/AdminComponents";
+import NotificationPopover from "../common/NotificationPopover";
 
 export default function AdminHeader({
   activeRole,
@@ -95,6 +96,22 @@ export default function AdminHeader({
           : "Workspace & Matriks Divisi";
       case "absensi":
         return "Absensi & Presensi Rapat";
+      case "absensi_input":
+        return "Input Absensi Real-Time";
+      case "divisi_pic":
+        return "Kelola Divisi & Penunjukan PIC";
+      case "user_management":
+        return "Manajemen Akun Portal";
+      case "import_export":
+        return "Import & Export Data";
+      case "pengumuman":
+        return "Manajemen Pengumuman";
+      case "pengajuan":
+        return "Pengajuan & Approval";
+      case "care_tracker":
+        return "Monitoring Anggota";
+      case "pengaturan":
+        return "Pengaturan Organisasi";
       case "proker":
         return "Program Kerja & Pagu Anggaran";
       case "calendar":
@@ -288,6 +305,9 @@ export default function AdminHeader({
             </div>
           )}
         </div>
+
+        {/* Bell Notifikasi */}
+        <NotificationPopover />
 
         {/* Tombol Logout */}
         {onLogout && (

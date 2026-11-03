@@ -173,6 +173,17 @@ export function getSidebarNavigation(currentRole) {
         id: "absensi",
         label: "Presensi Rapat BEM",
         icon: "CheckCircle2"
+      },
+      {
+        id: "absensi_input",
+        label: "Input Absensi Real-Time",
+        icon: "CheckSquare",
+        badge: "Live"
+      },
+      {
+        id: "divisi_pic",
+        label: "Divisi & Penunjukan PIC",
+        icon: "Crown"
       }
     ]
   });
@@ -201,7 +212,7 @@ export function getSidebarNavigation(currentRole) {
 
   // Group 4: ADMINISTRASI & KEUANGAN
   groups.push({
-    title: "ADMINISTRASI & KEUANGAN",
+    title: "TATA KELOLA & ARSIP",
     items: [
       {
         id: "finance",
@@ -213,6 +224,36 @@ export function getSidebarNavigation(currentRole) {
         id: "advocacy",
         label: "Advokasi & Aspirasi",
         icon: "Scale"
+      },
+      {
+        id: "pengajuan",
+        label: "Pengajuan & Approval",
+        icon: "FileCheck"
+      },
+      {
+        id: "pengumuman",
+        label: "Manajemen Pengumuman",
+        icon: "Bell"
+      },
+      {
+        id: "user_management",
+        label: "Manajemen Akun Portal",
+        icon: "UserCog"
+      },
+      {
+        id: "import_export",
+        label: "Import & Export Data",
+        icon: "FileSpreadsheet"
+      },
+      {
+        id: "care_tracker",
+        label: "Monitoring Anggota",
+        icon: "Heart"
+      },
+      {
+        id: "pengaturan",
+        label: "Pengaturan Organisasi",
+        icon: "Settings"
       },
       {
         id: "logs",

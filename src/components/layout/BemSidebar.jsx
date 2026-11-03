@@ -16,6 +16,13 @@ import {
   X,
   Sparkles,
   ArrowRight,
+  Crown,
+  FileCheck,
+  Bell,
+  UserCog,
+  FileSpreadsheet,
+  Heart,
+  Settings,
 } from "lucide-react";
 import { ROLES, ROLE_PROFILES, getSidebarNavigation } from "../../domain/rbac";
 import { AdminBadge } from "../common/AdminComponents";
@@ -35,6 +42,13 @@ const ICON_MAP = {
   Users,
   ShieldCheck,
   Building,
+  Crown,
+  FileCheck,
+  Bell,
+  UserCog,
+  FileSpreadsheet,
+  Heart,
+  Settings,
 };
 
 export default function BemSidebar({
